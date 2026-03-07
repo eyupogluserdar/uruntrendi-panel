@@ -5,10 +5,8 @@ import { POSPanel } from './components/POSPanel'
 import { OrdersPanel } from './components/OrdersPanel'
 import { Login } from './components/Login'
 import { PresenceIndicator } from './components/PresenceIndicator'
-import { supabase } from './lib/supabase'
-import { LayoutGrid, ShoppingCart, ClipboardList, CheckCircle2, LogOut } from 'lucide-react'
-import type { Filament, Product, Order, OrderItem, PaymentMethod, UserProfile } from './types'
-import type { User as SupabaseUser } from '@supabase/supabase-js'
+import { LayoutGrid, ShoppingCart, ClipboardList, CheckCircle2 } from 'lucide-react'
+import type { Filament, Product, Order, OrderItem, PaymentMethod, User } from './types'
 
 function App() {
   const [electricityRate, setElectricityRate] = useState<number>(() => {
@@ -34,71 +32,17 @@ function App() {
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isPOSOpen, setIsPOSOpen] = useState(false);
 
-  const [user, setUser] = useState<SupabaseUser | null>(null);
-  const [profile, setProfile] = useState<UserProfile | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [user, setUser] = useState<User | null>({
+    id: 'admin-id',
+    username: 'admin',
+    full_name: 'Sistem Yöneticisi',
+    role: 'admin'
+  });
 
   const [devicePowerWatt, setDevicePowerWatt] = useState<number>(() => {
     const saved = localStorage.getItem('devicePowerWatt');
     return saved ? parseInt(saved) : 100;
   });
-
-  useEffect(() => {
-    if (!supabase) {
-      setLoading(false);
-      return;
-    }
-
-    // Get initial session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setUser(session?.user ?? null);
-      if (session?.user) fetchProfile(session.user.id);
-      else setLoading(false);
-    });
-
-    // Listen for auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setUser(session?.user ?? null);
-      if (session?.user) {
-        fetchProfile(session.user.id);
-      } else {
-        setProfile(null);
-        setLoading(false);
-      }
-    });
-
-    return () => subscription.unsubscribe();
-  }, []);
-
-  const fetchProfile = async (userId: string) => {
-    if (!supabase) return;
-    try {
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', userId)
-        .single();
-
-      if (error) {
-        // Fallback for demo: Create a temporary profile if table doesn't exist yet
-        setProfile({
-          id: userId,
-          full_name: user?.email?.split('@')[0] || 'Kullanıcı',
-          role: 'admin'
-        });
-      } else {
-        setProfile(data);
-      }
-    } catch (err) {
-      console.error('Profile fetch error:', err);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleLogout = async () => {
-    if (supabase) await supabase.auth.signOut();
-  };
 
   useEffect(() => {
     localStorage.setItem('electricityRate', electricityRate.toString());
@@ -145,13 +89,12 @@ function App() {
       target_date: isPostDated ? targetDate : undefined,
       is_payment_received: false,
       is_delivered: false,
-      is_tracked: false, // Start unchecked for all orders
+      is_tracked: false,
       status: 'Bekliyor',
       notes: notes,
       created_at: new Date().toISOString()
     };
 
-    // Stokları düş (Filaman)
     cart.forEach(item => {
       if (item.filament_id) {
         setFilaments(prev => prev.map(f =>
@@ -185,21 +128,12 @@ function App() {
     setOrders(prev => prev.map(o => o.id === id ? { ...o, is_tracked: isTracked } : o));
   };
 
-  if (loading) {
-    return (
-      <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#020617', color: 'white' }}>
-        <p>Yükleniyor...</p>
-      </div>
-    );
-  }
-
   if (!user) {
-    return <Login />;
+    return <Login onLogin={setUser} />;
   }
 
   return (
     <div className="app-container" style={{ minHeight: '100vh', paddingBottom: '100px' }}>
-      {/* Auth Header Overlay */}
       <div style={{
         position: 'fixed', top: '20px', right: '20px', zIndex: 900,
         display: 'flex', alignItems: 'center', gap: '20px',
@@ -208,26 +142,14 @@ function App() {
         border: '1px solid rgba(255,255,255,0.08)',
         boxShadow: '0 10px 30px rgba(0,0,0,0.3)'
       }}>
-        <PresenceIndicator currentProfile={profile} />
+        <PresenceIndicator currentProfile={user as any} />
         <div style={{ width: '1px', height: '20px', background: 'rgba(255,255,255,0.1)' }}></div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
           <div style={{ textAlign: 'right' }}>
-            <div style={{ fontSize: '0.85rem', fontWeight: '800', color: 'white' }}>{profile?.full_name}</div>
-            <div style={{ fontSize: '0.7rem', color: 'var(--primary)', fontWeight: '700', textTransform: 'uppercase' }}>{profile?.role}</div>
+            <div style={{ fontSize: '0.85rem', fontWeight: '800', color: 'white' }}>{user?.full_name}</div>
+            <div style={{ fontSize: '0.7rem', color: 'var(--primary)', fontWeight: '700', textTransform: 'uppercase' }}>{user?.role}</div>
           </div>
-          <button
-            onClick={handleLogout}
-            style={{
-              background: 'rgba(239, 68, 68, 0.1)', color: 'var(--danger)',
-              border: 'none', padding: '8px', borderRadius: '10px',
-              cursor: 'pointer', transition: 'all 0.2s'
-            }}
-            title="Çıkış Yap"
-            onMouseOver={(e) => e.currentTarget.style.background = 'rgba(239, 68, 68, 0.2)'}
-            onMouseOut={(e) => e.currentTarget.style.background = 'rgba(239, 68, 68, 0.1)'}
-          >
-            <LogOut size={18} />
-          </button>
+          {/* Logout button hidden to simplify UI */}
         </div>
       </div>
 
@@ -293,7 +215,7 @@ function App() {
           filaments={filaments}
           onFilamentsChange={setFilaments}
           onClose={() => setIsSettingsOpen(false)}
-          profile={profile}
+          profile={user as any}
         />
       )}
 

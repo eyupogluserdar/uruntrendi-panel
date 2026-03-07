@@ -69,3 +69,12 @@ export interface UserProfile {
   is_online?: boolean;
   last_seen?: string;
 }
+
+export interface User {
+  id: string;
+  username: string;
+  password?: string;
+  full_name: string;
+  role: UserRole;
+  created_at?: string;
+}
