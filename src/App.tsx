@@ -211,7 +211,7 @@ function App() {
     return (
       <div style={{
         height: '100vh', width: '100vw', display: 'flex', flexDirection: 'column',
-        alignItems: 'center', justifyContent: 'center', background: 'var(--bg)', color: 'white'
+        alignItems: 'center', justifyContent: 'center', background: 'var(--background)', color: 'white'
       }}>
         <div className="spin" style={{ width: '40px', height: '40px', border: '4px solid var(--primary)', borderTopColor: 'transparent', borderRadius: '50%', marginBottom: '20px' }}></div>
         <p style={{ fontWeight: '600', letterSpacing: '1px' }}>VERİLER YÜKLENİYOR...</p>
