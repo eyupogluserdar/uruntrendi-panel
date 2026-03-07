@@ -5,12 +5,20 @@ const supabaseUrl = (import.meta.env.VITE_SUPABASE_URL || '').trim();
 const supabaseAnonKey = (import.meta.env.VITE_SUPABASE_ANON_KEY || '').trim();
 
 if (!supabaseUrl || !supabaseAnonKey) {
-    console.warn('Supabase URL or Anon Key is missing. Check your environment variables.');
+    console.error('DIKKAT: Supabase URL veya Anon Key eksik! Render ortam değişkenlerini kontrol edin.');
 } else {
-    console.log('Supabase client initialized with URL:', supabaseUrl);
+    // Debug logging (safe version)
+    const maskedUrl = supabaseUrl.replace(/(https?:\/\/).*/, '$1' + '***.supabase.co');
+    console.log('Supabase Bağlantı Bilgisi:', {
+        url: maskedUrl,
+        urlLength: supabaseUrl.length,
+        hasProtocol: supabaseUrl.startsWith('http'),
+        keyLength: supabaseAnonKey.length,
+        env: import.meta.env.MODE
+    });
 }
 
-export const supabase = (supabaseUrl && supabaseAnonKey)
+export const supabase = (supabaseUrl && supabaseAnonKey && supabaseUrl.startsWith('http'))
     ? createClient(supabaseUrl, supabaseAnonKey)
     : null;
 
