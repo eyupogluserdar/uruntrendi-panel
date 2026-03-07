@@ -1,23 +1,18 @@
-import { Receipt, Box, BarChart3, AlertTriangle, Tag, ShoppingCart, Zap } from 'lucide-react';
+import { Box, BarChart3, AlertTriangle, Tag, ShoppingCart } from 'lucide-react';
 import type { Product, Filament } from '../types';
-import { formatCurrency, calculateElectricityCost, calculateFilamentCost } from '../utils/calculations';
+import { formatCurrency } from '../utils/calculations';
 
 interface ProductCardProps {
     product: Product;
-    electricityRate: number;
-    devicePowerWatt: number;
     filaments: Filament[];
     onClick: (product: Product) => void;
     onAddToCart: () => void;
 }
 
-export const ProductCard: React.FC<ProductCardProps> = ({ product, electricityRate, devicePowerWatt, filaments, onClick, onAddToCart }) => {
+export const ProductCard: React.FC<ProductCardProps> = ({ product, filaments, onClick, onAddToCart }) => {
     const isLowStock = product.stock_count <= product.min_stock_alert;
-    const currentElectricityCost = calculateElectricityCost(product.print_time_h, product.print_time_m, electricityRate, devicePowerWatt);
 
     const selectedFilament = filaments.find(f => f.id === product.filament_id);
-    const filamentPrice = selectedFilament ? selectedFilament.price_per_kg : (product.filament_price_per_kg || 600);
-    const currentFilamentCost = calculateFilamentCost(product.weight_g || 0, filamentPrice);
 
     return (
         <div className="glass-card fade-in" onClick={() => onClick(product)} style={{
@@ -81,21 +76,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, electricityRa
                     </div>
                 )}
 
-                <div style={{
-                    position: 'absolute',
-                    bottom: '12px',
-                    right: '12px',
-                    background: 'rgba(16, 185, 129, 0.2)',
-                    backdropFilter: 'blur(4px)',
-                    border: '1px solid rgba(16, 185, 129, 0.3)',
-                    color: 'var(--success)',
-                    padding: '4px 10px',
-                    borderRadius: '10px',
-                    fontSize: '0.8rem',
-                    fontWeight: '700'
-                }}>
-                    + {formatCurrency(product.profit)} Kâr
-                </div>
+                {/* Kar margin was here, now hidden for customer view */}
             </div>
 
             <div style={{ padding: '20px', flex: 1, display: 'flex', flexDirection: 'column' }}>
@@ -120,28 +101,14 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, electricityRa
                         </div>
                     </div>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                        <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Toplam Maliyet</span>
+                        <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Boyutlar (X/Y/Z)</span>
                         <div style={{ display: 'flex', flexDirection: 'column' }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontWeight: '800', color: 'var(--warning)', fontSize: '1.05rem' }}>
-                                <Receipt size={16} />
-                                <span>{formatCurrency(currentElectricityCost + currentFilamentCost)}</span>
-                            </div>
-                            <div style={{
-                                fontSize: '0.65rem',
-                                color: 'rgba(255,255,255,0.5)',
-                                marginTop: '4px',
-                                marginLeft: '22px',
-                                display: 'flex',
-                                alignItems: 'center',
-                                gap: '8px'
-                            }}>
-                                <span style={{ display: 'flex', alignItems: 'center', gap: '2px', color: '#fbbf24' }}>
-                                    <Zap size={10} /> {formatCurrency(currentElectricityCost)}
-                                </span>
-                                <span style={{ color: 'rgba(255,255,255,0.2)' }}>|</span>
-                                <span style={{ display: 'flex', alignItems: 'center', gap: '2px', color: 'var(--text-muted)' }}>
-                                    <Tag size={10} /> {formatCurrency(currentFilamentCost)}
-                                </span>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontWeight: '800', color: 'var(--text)', fontSize: '0.9rem' }}>
+                                <span>{product.length_mm || 0}</span>
+                                <span style={{ color: 'var(--text-muted)', fontSize: '0.7rem' }}>x</span>
+                                <span>{product.width_mm || 0}</span>
+                                <span style={{ color: 'var(--text-muted)', fontSize: '0.7rem' }}>x</span>
+                                <span>{product.height_mm || 0} mm</span>
                             </div>
                         </div>
                     </div>

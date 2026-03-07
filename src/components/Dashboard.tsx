@@ -4,15 +4,13 @@ import { ProductCard } from './ProductCard';
 import type { Product, Filament } from '../types';
 
 interface DashboardProps {
-    electricityRate: number;
-    devicePowerWatt: number;
     filaments: Filament[];
     products: Product[];
     onAddToCart: (product: Product) => void;
     onEditProduct: (product: Product) => void;
 }
 
-export const Dashboard: React.FC<DashboardProps> = ({ electricityRate, devicePowerWatt, filaments, products, onAddToCart, onEditProduct }) => {
+export const Dashboard: React.FC<DashboardProps> = ({ filaments, products, onAddToCart, onEditProduct }) => {
     return (
         <div className="container" style={{ paddingBottom: '120px' }}>
             {/* Arama ve Filtre - Daha geniş ve premium */}
@@ -53,8 +51,6 @@ export const Dashboard: React.FC<DashboardProps> = ({ electricityRate, devicePow
                     <div key={product.id} className="fade-in">
                         <ProductCard
                             product={product}
-                            electricityRate={electricityRate}
-                            devicePowerWatt={devicePowerWatt}
                             filaments={filaments}
                             onClick={() => onEditProduct(product)}
                             onAddToCart={() => onAddToCart(product)}

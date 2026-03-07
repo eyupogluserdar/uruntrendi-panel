@@ -244,6 +244,21 @@ export const ProductForm: React.FC<ProductFormProps> = ({ onClose, onSave, elect
                             </div>
                         </div>
 
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '12px', marginTop: '12px', marginBottom: '12px' }}>
+                            <div>
+                                <label style={labelStyle}>En (X) mm</label>
+                                <input type="number" step="0.1" style={inputStyle} value={formData.length_mm || ''} onChange={e => setFormData({ ...formData, length_mm: parseFloat(e.target.value) || 0 })} />
+                            </div>
+                            <div>
+                                <label style={labelStyle}>Boy (Y) mm</label>
+                                <input type="number" step="0.1" style={inputStyle} value={formData.width_mm || ''} onChange={e => setFormData({ ...formData, width_mm: parseFloat(e.target.value) || 0 })} />
+                            </div>
+                            <div>
+                                <label style={labelStyle}>Yükseklik (Z) mm</label>
+                                <input type="number" step="0.1" style={inputStyle} value={formData.height_mm || ''} onChange={e => setFormData({ ...formData, height_mm: parseFloat(e.target.value) || 0 })} />
+                            </div>
+                        </div>
+
                         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
                             <div>
                                 <label style={labelStyle}>Flament Seçimi</label>

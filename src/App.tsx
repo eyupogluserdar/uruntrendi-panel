@@ -358,8 +358,6 @@ function App() {
         {activeTab === 'vitrin' && (
           <Dashboard
             filaments={filaments}
-            electricityRate={electricityRate}
-            devicePowerWatt={devicePowerWatt}
             products={products}
             onAddToCart={handleAddToCart}
             onEditProduct={(product) => {

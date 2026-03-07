@@ -24,6 +24,9 @@ export interface Product {
   stock_count: number;
   min_stock_alert: number;
   barcodes: string[];
+  length_mm?: number;
+  width_mm?: number;
+  height_mm?: number;
   created_at?: string;
 }
 
