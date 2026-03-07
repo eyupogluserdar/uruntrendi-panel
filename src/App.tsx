@@ -56,31 +56,43 @@ function App() {
   useEffect(() => {
     const fetchData = async () => {
       setIsLoading(true);
-      console.log('Attempting to fetch all data from Supabase...');
+      console.log('--- Supabase Veri Çekme Başlatıldı ---');
+
       if (!supabase) {
-        console.error('Supabase client is not initialized!');
+        console.error('HATA: Supabase bağlantısı kurulamadı! Lütfen Render panelindeki Environment Variables ayarlarını kontrol et.');
         setIsLoading(false);
         return;
       }
 
       try {
-        const [prodRes, filRes, ordRes] = await Promise.all([
-          supabase.from('products').select('*').order('created_at', { ascending: false }),
-          supabase.from('filaments').select('*').order('created_at', { ascending: false }),
-          supabase.from('orders').select('*').order('created_at', { ascending: false })
-        ]);
-
-        if (prodRes.error) throw prodRes.error;
-        if (filRes.error) throw filRes.error;
-        if (ordRes.error) throw ordRes.error;
-
+        console.log('1. Ürünler çekiliyor...');
+        const prodRes = await supabase.from('products').select('*').order('created_at', { ascending: false });
+        if (prodRes.error) {
+          console.error('Ürün çekme hatası:', prodRes.error);
+          throw new Error('Ürünler: ' + prodRes.error.message);
+        }
         setProducts(prodRes.data || []);
+
+        console.log('2. Filamanlar çekiliyor...');
+        const filRes = await supabase.from('filaments').select('*').order('created_at', { ascending: false });
+        if (filRes.error) {
+          console.error('Filaman çekme hatası:', filRes.error);
+          throw new Error('Filamanlar: ' + filRes.error.message);
+        }
         setFilaments(filRes.data || []);
+
+        console.log('3. Siparişler çekiliyor...');
+        const ordRes = await supabase.from('orders').select('*').order('created_at', { ascending: false });
+        if (ordRes.error) {
+          console.error('Sipariş çekme hatası:', ordRes.error);
+          throw new Error('Siparişler: ' + ordRes.error.message);
+        }
         setOrders(ordRes.data || []);
-        console.log('All data fetched successfully');
+
+        console.log('--- Tüm veriler başarıyla yüklendi ---');
       } catch (error: any) {
-        console.error('Supabase fetch error:', error);
-        alert('Veriler yüklenirken hata oluştu: ' + error.message);
+        console.error('GENEL HATA:', error);
+        alert('Veritabanı bağlantı hatası: ' + error.message + '\n\nİpucu: İnternet bağlantını ve Render Environment Variables ayarlarını kontrol et.');
       } finally {
         setIsLoading(false);
       }
