@@ -1,4 +1,4 @@
-import { Box, BarChart3, AlertTriangle, Tag, ShoppingCart } from 'lucide-react';
+import { Box, BarChart3, AlertTriangle, Tag, ShoppingCart, Clock } from 'lucide-react';
 import type { Product, Filament } from '../types';
 import { formatCurrency } from '../utils/calculations';
 
@@ -110,6 +110,13 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, filaments, on
                                 <span style={{ color: 'var(--text-muted)', fontSize: '0.7rem' }}>x</span>
                                 <span>{product.height_mm || 0} mm</span>
                             </div>
+                        </div>
+                    </div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                        <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Üretim Süresi</span>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontWeight: '600' }}>
+                            <Clock size={16} color="var(--primary)" />
+                            <span>{product.print_time_h}s {product.print_time_m}d</span>
                         </div>
                     </div>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
