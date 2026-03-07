@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Wallet, TrendingUp, Calendar, CreditCard, Banknote, History, PieChart, ChevronRight, X, Package, ChevronLeft, PackageOpen, Filter } from 'lucide-react';
+import { Wallet, TrendingUp, Calendar, CreditCard, Banknote, History, PieChart, ChevronRight, X, Package, PackageOpen, Filter } from 'lucide-react';
 import type { Order, Product } from '../types';
 import { formatCurrency } from '../utils/calculations';
 
