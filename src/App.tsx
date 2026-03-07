@@ -27,6 +27,7 @@ function App() {
   const [cart, setCart] = useState<OrderItem[]>([]);
   const [orders, setOrders] = useState<Order[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [fetchError, setFetchError] = useState<string | null>(null);
 
   const [isPOSOpen, setIsPOSOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | undefined>(undefined);
@@ -92,7 +93,7 @@ function App() {
         console.log('--- Tüm veriler başarıyla yüklendi ---');
       } catch (error: any) {
         console.error('GENEL HATA:', error);
-        alert('Veritabanı bağlantı hatası: ' + error.message + '\n\nİpucu: İnternet bağlantını ve Render Environment Variables ayarlarını kontrol et.');
+        setFetchError(error.message);
       } finally {
         setIsLoading(false);
       }
@@ -219,14 +220,42 @@ function App() {
     return <Login onLogin={() => { }} />;
   }
 
-  if (isLoading) {
+  if (isLoading || fetchError) {
+    const supabaseUrl = (import.meta.env.VITE_SUPABASE_URL || '').trim();
+    const maskedUrl = supabaseUrl ? supabaseUrl.replace(/(https?:\/\/).*/, '$1' + '***.supabase.co') : 'EKSIK';
+
     return (
       <div style={{
         height: '100vh', width: '100vw', display: 'flex', flexDirection: 'column',
-        alignItems: 'center', justifyContent: 'center', background: 'var(--background)', color: 'white'
+        alignItems: 'center', justifyContent: 'center', background: 'var(--background)', color: 'white',
+        padding: '20px', textAlign: 'center'
       }}>
-        <div className="spin" style={{ width: '40px', height: '40px', border: '4px solid var(--primary)', borderTopColor: 'transparent', borderRadius: '50%', marginBottom: '20px' }}></div>
-        <p style={{ fontWeight: '600', letterSpacing: '1px' }}>VERİLER YÜKLENİYOR...</p>
+        {isLoading ? (
+          <>
+            <div className="spin" style={{ width: '40px', height: '40px', border: '4px solid var(--primary)', borderTopColor: 'transparent', borderRadius: '50%', marginBottom: '20px' }}></div>
+            <p style={{ fontWeight: '600', letterSpacing: '1px' }}>VERİLER YÜKLENİYOR...</p>
+          </>
+        ) : (
+          <div className="glass-card" style={{ padding: '40px', maxWidth: '500px' }}>
+            <h2 style={{ color: 'var(--danger)', marginBottom: '20px' }}>Bağlantı Hatası!</h2>
+            <p style={{ color: 'var(--text-muted)', marginBottom: '30px' }}>
+              Veritabanına ulaşılamıyor. Lütfen şu bilgileri kontrol edin:
+            </p>
+
+            <div style={{ textAlign: 'left', background: 'rgba(0,0,0,0.3)', padding: '20px', borderRadius: '12px', marginBottom: '30px', fontSize: '0.85rem' }}>
+              <div style={{ marginBottom: '10px' }}><strong>Hata:</strong> <span style={{ color: 'var(--warning)' }}>{fetchError}</span></div>
+              <div style={{ marginBottom: '10px' }}><strong>URL:</strong> <code>{maskedUrl}</code></div>
+              <div><strong>Key:</strong> <code>{(import.meta.env.VITE_SUPABASE_ANON_KEY || '').length > 0 ? 'Mevcut (' + (import.meta.env.VITE_SUPABASE_ANON_KEY || '').length + ' karakter)' : 'EKSIK'}</code></div>
+            </div>
+
+            <button onClick={() => window.location.reload()} className="btn btn-primary" style={{ width: '100%' }}>
+              Sayfayı Yenile ve Tekrar Dene
+            </button>
+            <p style={{ marginTop: '20px', fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+              İpucu: Eğer URL veya Key yanlışsa Render panelinden düzeltip tekrar deploy edin.
+            </p>
+          </div>
+        )}
       </div>
     );
   }
