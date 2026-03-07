@@ -126,9 +126,9 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, filaments, on
                             <span style={{ color: isLowStock ? 'var(--danger)' : 'var(--text)' }}>{product.stock_count} Adet</span>
                         </div>
                     </div>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', gridColumn: 'span 2', background: 'rgba(0,0,0,0.2)', padding: '12px', borderRadius: '12px', marginTop: '4px' }}>
                         <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Satış Fiyatı</span>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontWeight: '800', color: 'var(--success)', fontSize: '1.1rem' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontWeight: '800', color: 'var(--success)', fontSize: '1.2rem' }}>
                             {formatCurrency(product.sale_price)}
                         </div>
                     </div>
