@@ -265,31 +265,42 @@ function App() {
           <ProductForm
             onClose={() => setActiveTab('vitrin')}
             onSave={async (newProduct: Product) => {
-              if (!supabase) return;
+              console.log('Attempting to save product:', newProduct);
+              if (!supabase) {
+                alert('Supabase bağlantısı kurulamadı. Lütfen ayarlarınızı kontrol edin.');
+                return;
+              }
 
-              if (editingProduct) {
-                const { error } = await supabase
-                  .from('products')
-                  .update(newProduct)
-                  .eq('id', newProduct.id);
+              try {
+                if (editingProduct) {
+                  const { error } = await supabase
+                    .from('products')
+                    .update(newProduct)
+                    .eq('id', newProduct.id);
 
-                if (error) {
-                  alert('Ürün güncellenirken hata oluştu: ' + error.message);
+                  if (error) {
+                    console.error('Supabase update error:', error);
+                    alert('Ürün güncellenirken hata oluşti: ' + error.message);
+                  } else {
+                    setProducts(products.map(p => p.id === newProduct.id ? newProduct : p));
+                    setActiveTab('vitrin');
+                  }
                 } else {
-                  setProducts(products.map(p => p.id === newProduct.id ? newProduct : p));
-                  setActiveTab('vitrin');
-                }
-              } else {
-                const { error } = await supabase
-                  .from('products')
-                  .insert([newProduct]);
+                  const { error } = await supabase
+                    .from('products')
+                    .insert([newProduct]);
 
-                if (error) {
-                  alert('Ürün eklenirken hata oluştu: ' + error.message);
-                } else {
-                  setProducts([newProduct, ...products]);
-                  setActiveTab('vitrin');
+                  if (error) {
+                    console.error('Supabase insert error details:', error);
+                    alert('Ürün eklenirken hata oluştu: ' + (error.message || JSON.stringify(error)));
+                  } else {
+                    setProducts([newProduct, ...products]);
+                    setActiveTab('vitrin');
+                  }
                 }
+              } catch (err) {
+                console.error('Unexpected error during save:', err);
+                alert('Beklenmedik bir hata oluştu: ' + (err instanceof Error ? err.message : String(err)));
               }
             }}
             electricityRate={electricityRate}

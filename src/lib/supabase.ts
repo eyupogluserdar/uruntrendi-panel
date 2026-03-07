@@ -1,8 +1,14 @@
 import { createClient } from '@supabase/supabase-js';
 
 // NOT: Bu değerler kullanıcı tarafından Supabase panelinden alınmalıdır.
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || '';
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || '';
+const supabaseUrl = (import.meta.env.VITE_SUPABASE_URL || '').trim();
+const supabaseAnonKey = (import.meta.env.VITE_SUPABASE_ANON_KEY || '').trim();
+
+if (!supabaseUrl || !supabaseAnonKey) {
+    console.warn('Supabase URL or Anon Key is missing. Check your environment variables.');
+} else {
+    console.log('Supabase client initialized with URL:', supabaseUrl);
+}
 
 export const supabase = (supabaseUrl && supabaseAnonKey)
     ? createClient(supabaseUrl, supabaseAnonKey)
