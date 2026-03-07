@@ -4,9 +4,10 @@ import type { Product } from '../types';
 
 interface StockTrackingProps {
     products: Product[];
+    onDeleteProduct?: (productId: string) => void;
 }
 
-export const StockTracking: React.FC<StockTrackingProps> = ({ products }) => {
+export const StockTracking: React.FC<StockTrackingProps> = ({ products, onDeleteProduct }) => {
     const lowStockProducts = products.filter(p => p.stock_count <= p.min_stock_alert);
 
     return (
@@ -66,9 +67,27 @@ export const StockTracking: React.FC<StockTrackingProps> = ({ products }) => {
                                     <div style={{ fontWeight: '700', fontSize: '1.1rem', marginBottom: '4px', color: 'white' }}>{p.title}</div>
                                     <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Minimum Limit: {p.min_stock_alert} Adet</div>
                                 </div>
-                                <div style={{ textAlign: 'right' }}>
-                                    <div style={{ color: 'var(--danger)', fontWeight: '900', fontSize: '1.5rem' }}>{p.stock_count}</div>
-                                    <div style={{ fontSize: '0.7rem', color: 'var(--danger)', opacity: 0.8, textTransform: 'uppercase', fontWeight: '800' }}>Kalan Adet</div>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
+                                    <div style={{ textAlign: 'right' }}>
+                                        <div style={{ color: 'var(--danger)', fontWeight: '900', fontSize: '1.5rem' }}>{p.stock_count}</div>
+                                        <div style={{ fontSize: '0.7rem', color: 'var(--danger)', opacity: 0.8, textTransform: 'uppercase', fontWeight: '800' }}>Kalan Adet</div>
+                                    </div>
+                                    {onDeleteProduct && (
+                                        <button
+                                            onClick={() => onDeleteProduct(p.id)}
+                                            style={{
+                                                background: 'rgba(239, 68, 68, 0.1)',
+                                                border: 'none',
+                                                color: 'var(--danger)',
+                                                padding: '8px',
+                                                borderRadius: '8px',
+                                                cursor: 'pointer'
+                                            }}
+                                            title="Ürünü Sil"
+                                        >
+                                            <AlertCircle size={20} />
+                                        </button>
+                                    )}
                                 </div>
                             </div>
                         ))}

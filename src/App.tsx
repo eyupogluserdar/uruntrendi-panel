@@ -228,7 +228,7 @@ function App() {
         {activeTab === 'stok-takibi' && (
           <StockTracking
             products={products}
-            onDeleteProduct={async (productId) => {
+            onDeleteProduct={async (productId: string) => {
               if (!supabase) return;
               if (confirm('Bu ürünü silmek istediğinize emin misiniz?')) {
                 const { error } = await supabase
