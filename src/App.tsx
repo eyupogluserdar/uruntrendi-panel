@@ -12,6 +12,7 @@ import { Navigation } from './components/Navigation'
 import { ProductForm } from './components/ProductForm'
 import { StockTracking } from './components/StockTracking'
 import { FinancePanel } from './components/FinancePanel'
+import { supabase } from './lib/supabase'
 import type { Tab } from './types'
 
 function App() {
@@ -30,47 +31,7 @@ function App() {
 
   const [activeTab, setActiveTab] = useState<Tab>('vitrin');
 
-  const [products, setProducts] = useState<Product[]>(() => {
-    const saved = localStorage.getItem('products');
-    return saved ? JSON.parse(saved) : [
-      {
-        id: '1',
-        title: 'Bambu Vazo',
-        image_url: 'https://images.unsplash.com/photo-1581783898377-1c85bf937427?auto=format&fit=crop&q=80&w=400',
-        weight_g: 150,
-        print_time_h: 5,
-        print_time_m: 30,
-        filament_id: 'f1',
-        filament_price_per_kg: 450,
-        electricity_cost: 2.2,
-        filament_cost: 67.5,
-        total_cost: 69.7,
-        sale_price: 350,
-        profit: 280.3,
-        stock_count: 2,
-        min_stock_alert: 5,
-        barcodes: ['8690001112223', '8690001112223-2']
-      },
-      {
-        id: '2',
-        title: 'Kulaklık Askısı',
-        image_url: 'https://images.unsplash.com/photo-1590658268037-6bf12165a8df?auto=format&fit=crop&q=80&w=400',
-        weight_g: 80,
-        print_time_h: 3,
-        print_time_m: 0,
-        filament_id: 'f1',
-        filament_price_per_kg: 450,
-        electricity_cost: 1.2,
-        filament_cost: 36,
-        total_cost: 37.2,
-        sale_price: 150,
-        profit: 112.8,
-        stock_count: 12,
-        min_stock_alert: 3,
-        barcodes: ['8690001112224']
-      }
-    ];
-  });
+  const [products, setProducts] = useState<Product[]>([]);
   const [cart, setCart] = useState<OrderItem[]>([]);
   const [orders, setOrders] = useState<Order[]>(() => {
     const saved = localStorage.getItem('orders');
@@ -109,8 +70,29 @@ function App() {
   }, [orders]);
 
   useEffect(() => {
-    localStorage.setItem('products', JSON.stringify(products));
-  }, [products]);
+    const fetchProducts = async () => {
+      console.log('Attempting to fetch products from Supabase...');
+      if (!supabase) {
+        console.error('Supabase client is not initialized! Check your .env file and VITE_SUPABASE_URL / VITE_SUPABASE_ANON_KEY.');
+        return;
+      }
+
+      const { data, error } = await supabase
+        .from('products')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        console.error('Supabase error fetching products:', error);
+        alert('Ürünler yüklenirken Supabase hatası oluştu: ' + error.message);
+      } else {
+        console.log('Fetched products successfully:', data);
+        setProducts(data || []);
+      }
+    };
+
+    fetchProducts();
+  }, []);
 
   // Yeni Ürün Ekle sekmesine geçişte editingProduct'ı temizle
   useEffect(() => {
@@ -244,7 +226,24 @@ function App() {
           />
         )}
         {activeTab === 'stok-takibi' && (
-          <StockTracking products={products} />
+          <StockTracking
+            products={products}
+            onDeleteProduct={async (productId) => {
+              if (!supabase) return;
+              if (confirm('Bu ürünü silmek istediğinize emin misiniz?')) {
+                const { error } = await supabase
+                  .from('products')
+                  .delete()
+                  .eq('id', productId);
+
+                if (error) {
+                  alert('Ürün silinirken hata oluştu: ' + error.message);
+                } else {
+                  setProducts(products.filter(p => p.id !== productId));
+                }
+              }
+            }}
+          />
         )}
         {activeTab === 'bilanco' && (
           <FinancePanel orders={orders} products={products} />
@@ -265,13 +264,33 @@ function App() {
         {activeTab === 'yeni-urun' && (
           <ProductForm
             onClose={() => setActiveTab('vitrin')}
-            onSave={(newProduct) => {
+            onSave={async (newProduct: Product) => {
+              if (!supabase) return;
+
               if (editingProduct) {
-                setProducts(products.map(p => p.id === newProduct.id ? newProduct : p));
+                const { error } = await supabase
+                  .from('products')
+                  .update(newProduct)
+                  .eq('id', newProduct.id);
+
+                if (error) {
+                  alert('Ürün güncellenirken hata oluştu: ' + error.message);
+                } else {
+                  setProducts(products.map(p => p.id === newProduct.id ? newProduct : p));
+                  setActiveTab('vitrin');
+                }
               } else {
-                setProducts([newProduct, ...products]);
+                const { error } = await supabase
+                  .from('products')
+                  .insert([newProduct]);
+
+                if (error) {
+                  alert('Ürün eklenirken hata oluştu: ' + error.message);
+                } else {
+                  setProducts([newProduct, ...products]);
+                  setActiveTab('vitrin');
+                }
               }
-              setActiveTab('vitrin');
             }}
             electricityRate={electricityRate}
             devicePowerWatt={devicePowerWatt}
