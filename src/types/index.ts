@@ -78,3 +78,5 @@ export interface User {
   role: UserRole;
   created_at?: string;
 }
+
+export type Tab = 'vitrin' | 'siparisler' | 'teslim-edilenler' | 'yeni-urun' | 'stok-takibi' | 'bilanco' | 'ayarlar';

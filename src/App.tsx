@@ -5,8 +5,14 @@ import { POSPanel } from './components/POSPanel'
 import { OrdersPanel } from './components/OrdersPanel'
 import { Login } from './components/Login'
 import { PresenceIndicator } from './components/PresenceIndicator'
-import { LayoutGrid, ShoppingCart, ClipboardList, CheckCircle2 } from 'lucide-react'
+import { } from 'lucide-react'
 import type { Filament, Product, Order, OrderItem, PaymentMethod, User } from './types'
+
+import { Navigation } from './components/Navigation'
+import { ProductForm } from './components/ProductForm'
+import { StockTracking } from './components/StockTracking'
+import { FinancePanel } from './components/FinancePanel'
+import type { Tab } from './types'
 
 function App() {
   const [electricityRate, setElectricityRate] = useState<number>(() => {
@@ -22,17 +28,59 @@ function App() {
     ];
   });
 
-  const [activeTab, setActiveTab] = useState<'vitrin' | 'siparisler' | 'teslim-edilenler'>('vitrin');
+  const [activeTab, setActiveTab] = useState<Tab>('vitrin');
+
+  const [products, setProducts] = useState<Product[]>(() => {
+    const saved = localStorage.getItem('products');
+    return saved ? JSON.parse(saved) : [
+      {
+        id: '1',
+        title: 'Bambu Vazo',
+        image_url: 'https://images.unsplash.com/photo-1581783898377-1c85bf937427?auto=format&fit=crop&q=80&w=400',
+        weight_g: 150,
+        print_time_h: 5,
+        print_time_m: 30,
+        filament_id: 'f1',
+        filament_price_per_kg: 450,
+        electricity_cost: 2.2,
+        filament_cost: 67.5,
+        total_cost: 69.7,
+        sale_price: 350,
+        profit: 280.3,
+        stock_count: 2,
+        min_stock_alert: 5,
+        barcodes: ['8690001112223', '8690001112223-2']
+      },
+      {
+        id: '2',
+        title: 'Kulaklık Askısı',
+        image_url: 'https://images.unsplash.com/photo-1590658268037-6bf12165a8df?auto=format&fit=crop&q=80&w=400',
+        weight_g: 80,
+        print_time_h: 3,
+        print_time_m: 0,
+        filament_id: 'f1',
+        filament_price_per_kg: 450,
+        electricity_cost: 1.2,
+        filament_cost: 36,
+        total_cost: 37.2,
+        sale_price: 150,
+        profit: 112.8,
+        stock_count: 12,
+        min_stock_alert: 3,
+        barcodes: ['8690001112224']
+      }
+    ];
+  });
   const [cart, setCart] = useState<OrderItem[]>([]);
   const [orders, setOrders] = useState<Order[]>(() => {
     const saved = localStorage.getItem('orders');
     return saved ? JSON.parse(saved) : [];
   });
 
-  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isPOSOpen, setIsPOSOpen] = useState(false);
+  const [editingProduct, setEditingProduct] = useState<Product | undefined>(undefined);
 
-  const [user, setUser] = useState<User | null>({
+  const [user] = useState<User | null>({
     id: 'admin-id',
     username: 'admin',
     full_name: 'Sistem Yöneticisi',
@@ -59,6 +107,17 @@ function App() {
   useEffect(() => {
     localStorage.setItem('orders', JSON.stringify(orders));
   }, [orders]);
+
+  useEffect(() => {
+    localStorage.setItem('products', JSON.stringify(products));
+  }, [products]);
+
+  // Yeni Ürün Ekle sekmesine geçişte editingProduct'ı temizle
+  useEffect(() => {
+    if (activeTab === 'yeni-urun' && !editingProduct) {
+      setEditingProduct(undefined);
+    }
+  }, [activeTab, editingProduct]);
 
   const handleAddToCart = (product: Product) => {
     setCart(prev => {
@@ -108,11 +167,7 @@ function App() {
     setIsPOSOpen(false);
   };
 
-  const updateOrderStatus = (id: string, status: Order['status']) => {
-    setOrders(prev => prev.map(o => o.id === id ? { ...o, status } : o));
-  };
-
-  const updateOrderFlags = (id: string, field: 'payment' | 'delivery') => {
+  const handleUpdateOrderFlags = (id: string, field: 'payment' | 'delivery') => {
     setOrders(prev => prev.map(o => {
       if (o.id === id) {
         if (field === 'payment') return { ...o, is_payment_received: true };
@@ -124,100 +179,121 @@ function App() {
     }));
   };
 
-  const updateOrderTracked = (id: string, isTracked: boolean) => {
+  const handleUpdateOrderTracked = (id: string, isTracked: boolean) => {
     setOrders(prev => prev.map(o => o.id === id ? { ...o, is_tracked: isTracked } : o));
   };
 
+  const handleDeleteOrder = (id: string) => {
+    setOrders(orders.filter(o => o.id !== id));
+  };
+
+  const handleTabChange = (tab: Tab) => {
+    if (tab === 'yeni-urun') {
+      setEditingProduct(undefined);
+    }
+    setActiveTab(tab);
+  };
+
   if (!user) {
-    return <Login onLogin={setUser} />;
+    return <Login onLogin={() => { }} />;
   }
 
   return (
-    <div className="app-container" style={{ minHeight: '100vh', paddingBottom: '100px' }}>
-      <div style={{
-        position: 'fixed', top: '20px', right: '20px', zIndex: 900,
-        display: 'flex', alignItems: 'center', gap: '20px',
-        padding: '12px 24px', borderRadius: '30px',
-        background: 'rgba(15, 23, 42, 0.4)', backdropFilter: 'blur(16px)',
-        border: '1px solid rgba(255,255,255,0.08)',
-        boxShadow: '0 10px 30px rgba(0,0,0,0.3)'
-      }}>
-        <PresenceIndicator currentProfile={user as any} />
-        <div style={{ width: '1px', height: '20px', background: 'rgba(255,255,255,0.1)' }}></div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-          <div style={{ textAlign: 'right' }}>
-            <div style={{ fontSize: '0.85rem', fontWeight: '800', color: 'white' }}>{user?.full_name}</div>
-            <div style={{ fontSize: '0.7rem', color: 'var(--primary)', fontWeight: '700', textTransform: 'uppercase' }}>{user?.role}</div>
+    <div className="app-layout">
+      <Navigation
+        activeTab={activeTab}
+        setActiveTab={handleTabChange}
+        cartCount={cart.length}
+        onOpenPOS={() => setIsPOSOpen(true)}
+      />
+
+      <main className="main-content">
+        <header style={{
+          display: 'flex', justifyContent: 'flex-end', alignItems: 'center',
+          marginBottom: '40px', gap: '20px'
+        }}>
+          <div style={{
+            display: 'flex', alignItems: 'center', gap: '20px',
+            padding: '12px 24px', borderRadius: '30px',
+            background: 'rgba(15, 23, 42, 0.4)', backdropFilter: 'blur(16px)',
+            border: '1px solid rgba(255,255,255,0.08)',
+            boxShadow: '0 10px 30px rgba(0,0,0,0.3)'
+          }}>
+            <PresenceIndicator currentProfile={user as any} />
+            <div style={{ width: '1px', height: '20px', background: 'rgba(255,255,255,0.1)' }}></div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <div style={{ textAlign: 'right' }}>
+                <div style={{ fontSize: '0.85rem', fontWeight: '800', color: 'white' }}>{user.full_name}</div>
+                <div style={{ fontSize: '0.7rem', color: 'var(--primary)', fontWeight: '700', textTransform: 'uppercase' }}>{user.role}</div>
+              </div>
+            </div>
           </div>
-          {/* Logout button hidden to simplify UI */}
-        </div>
-      </div>
+        </header>
 
-      <nav className="bottom-nav">
-        <button
-          className={`nav-item ${activeTab === 'vitrin' ? 'active' : ''}`}
-          onClick={() => setActiveTab('vitrin')}
-        >
-          <LayoutGrid size={24} />
-          <span>Vitrin</span>
-        </button>
-        <button
-          className={`nav-item ${activeTab === 'siparisler' ? 'active' : ''}`}
-          onClick={() => setActiveTab('siparisler')}
-        >
-          <ClipboardList size={24} />
-          <span>Siparişler</span>
-        </button>
-        <button
-          className={`nav-item ${activeTab === 'teslim-edilenler' ? 'active' : ''}`}
-          onClick={() => setActiveTab('teslim-edilenler')}
-        >
-          <CheckCircle2 size={24} />
-          <span>Teslim Edilenler</span>
-        </button>
-        <div className="nav-divider"></div>
-        <button className="nav-item pos-btn" onClick={() => setIsPOSOpen(true)}>
-          <div className="cart-badge">{cart.length}</div>
-          <ShoppingCart size={24} />
-          <span>Kasa</span>
-        </button>
-      </nav>
-
-      <main style={{ padding: '20px' }}>
         {activeTab === 'vitrin' && (
           <Dashboard
             filaments={filaments}
             electricityRate={electricityRate}
             devicePowerWatt={devicePowerWatt}
-            onOpenSettings={() => setIsSettingsOpen(true)}
+            products={products}
             onAddToCart={handleAddToCart}
+            onEditProduct={(product) => {
+              setEditingProduct(product);
+              setActiveTab('yeni-urun');
+            }}
           />
+        )}
+        {activeTab === 'stok-takibi' && (
+          <StockTracking products={products} />
+        )}
+        {activeTab === 'bilanco' && (
+          <FinancePanel orders={orders} products={products} />
         )}
         {(activeTab === 'siparisler' || activeTab === 'teslim-edilenler') && (
           <OrdersPanel
             orders={orders.filter(o =>
-              activeTab === 'siparisler' ? o.status === 'Bekliyor' : o.status === 'Teslim Edildi'
+              activeTab === 'siparisler'
+                ? (o.status === 'Bekliyor')
+                : (o.status === 'Teslim Edildi')
             )}
             type={activeTab === 'siparisler' ? 'bekleyenler' : 'teslim edilenler'}
-            onUpdateStatus={updateOrderStatus}
-            onUpdateOrderFlags={updateOrderFlags}
-            onUpdateOrderTracked={updateOrderTracked}
+            onUpdateOrderFlags={handleUpdateOrderFlags}
+            onUpdateOrderTracked={handleUpdateOrderTracked}
+            onDeleteOrder={handleDeleteOrder}
+          />
+        )}
+        {activeTab === 'yeni-urun' && (
+          <ProductForm
+            onClose={() => setActiveTab('vitrin')}
+            onSave={(newProduct) => {
+              if (editingProduct) {
+                setProducts(products.map(p => p.id === newProduct.id ? newProduct : p));
+              } else {
+                setProducts([newProduct, ...products]);
+              }
+              setActiveTab('vitrin');
+            }}
+            electricityRate={electricityRate}
+            devicePowerWatt={devicePowerWatt}
+            filaments={filaments}
+            initialProduct={editingProduct}
+            isPage={true}
+          />
+        )}
+        {activeTab === 'ayarlar' && (
+          <SettingsPanel
+            rate={electricityRate}
+            onRateChange={setElectricityRate}
+            powerWatt={devicePowerWatt}
+            onPowerWattChange={setDevicePowerWatt}
+            filaments={filaments}
+            onFilamentsChange={setFilaments}
+            onClose={() => setActiveTab('vitrin')}
+            profile={user as any}
+            isPage={true}
           />
         )}
       </main>
-
-      {isSettingsOpen && (
-        <SettingsPanel
-          rate={electricityRate}
-          onRateChange={setElectricityRate}
-          powerWatt={devicePowerWatt}
-          onPowerWattChange={setDevicePowerWatt}
-          filaments={filaments}
-          onFilamentsChange={setFilaments}
-          onClose={() => setIsSettingsOpen(false)}
-          profile={user as any}
-        />
-      )}
 
       {isPOSOpen && (
         <POSPanel
@@ -228,7 +304,7 @@ function App() {
         />
       )}
     </div>
-  )
+  );
 }
 
-export default App
+export default App;

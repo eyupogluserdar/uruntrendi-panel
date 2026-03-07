@@ -1,5 +1,5 @@
 import React from 'react';
-import { Package, Calendar, CreditCard, Banknote, Clock, CheckCircle2 } from 'lucide-react';
+import { Package, Calendar, CreditCard, Banknote, Clock, CheckCircle2, AlertCircle, Trash2 } from 'lucide-react';
 import type { Order } from '../types';
 import { formatCurrency } from '../utils/calculations';
 
@@ -8,13 +8,15 @@ interface OrdersPanelProps {
     type: 'bekleyenler' | 'teslim edilenler';
     onUpdateOrderFlags?: (id: string, field: 'payment' | 'delivery') => void;
     onUpdateOrderTracked?: (id: string, isTracked: boolean) => void;
+    onDeleteOrder?: (id: string) => void;
 }
 
 export const OrdersPanel: React.FC<OrdersPanelProps> = ({
     orders,
     type,
     onUpdateOrderFlags,
-    onUpdateOrderTracked
+    onUpdateOrderTracked,
+    onDeleteOrder
 }) => {
 
     const getRemainingTime = (targetDate?: string) => {
@@ -78,7 +80,7 @@ export const OrdersPanel: React.FC<OrdersPanelProps> = ({
 
             {orders.length === 0 ? (
                 <div className="glass-card fade-in"
-                     style={{ textAlign: 'center', padding: '100px 20px', borderStyle: 'dashed' }}>
+                    style={{ textAlign: 'center', padding: '100px 20px', borderStyle: 'dashed' }}>
                     <Package size={64} style={{ marginBottom: '24px', opacity: 0.1 }} />
                     <p style={{ color: 'var(--text-muted)', fontSize: '1.1rem' }}>
                         Henüz kayıtlı bir sipariş bulunmuyor.
@@ -107,18 +109,18 @@ export const OrdersPanel: React.FC<OrdersPanelProps> = ({
 
                         return (
                             <div key={order.id}
-                                 className={`glass-card fade-in ${shouldPulse ? 'pulse-border' : ''} ${isTrackedActive ? 'tracked-active' : ''}`}
-                                 style={{
-                                     padding: '28px',
-                                     display: 'flex',
-                                     flexDirection: 'column',
-                                     transition: 'all 0.3s ease',
-                                     border: isTrackedActive
-                                         ? '2px solid #10b981'
-                                         : shouldPulse
-                                             ? '1px solid rgba(251,191,36,0.4)'
-                                             : '1px solid var(--glass-border)',
-                                 }}>
+                                className={`glass-card fade-in ${shouldPulse ? 'pulse-border' : ''} ${isTrackedActive ? 'tracked-active' : ''}`}
+                                style={{
+                                    padding: '28px',
+                                    display: 'flex',
+                                    flexDirection: 'column',
+                                    transition: 'all 0.3s ease',
+                                    border: isTrackedActive
+                                        ? '2px solid #10b981'
+                                        : shouldPulse
+                                            ? '1px solid rgba(251,191,36,0.4)'
+                                            : '1px solid var(--glass-border)',
+                                }}>
 
                                 <div style={{
                                     display: 'flex',
@@ -133,9 +135,35 @@ export const OrdersPanel: React.FC<OrdersPanelProps> = ({
                                             fontWeight: '700',
                                             textTransform: 'uppercase',
                                             letterSpacing: '0.05em',
-                                            marginBottom: '4px'
+                                            marginBottom: '4px',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            gap: '8px'
                                         }}>
                                             Sipariş #{order.id}
+                                            <button
+                                                onClick={() => {
+                                                    if (window.confirm('Bu siparişi silmek istediğinize emin misiniz?')) {
+                                                        onDeleteOrder?.(order.id);
+                                                    }
+                                                }}
+                                                style={{
+                                                    background: 'transparent',
+                                                    border: 'none',
+                                                    color: 'var(--danger)',
+                                                    cursor: 'pointer',
+                                                    padding: '4px',
+                                                    borderRadius: '6px',
+                                                    display: 'flex',
+                                                    opacity: 0.6,
+                                                    transition: 'opacity 0.2s'
+                                                }}
+                                                onMouseOver={(e) => e.currentTarget.style.opacity = '1'}
+                                                onMouseOut={(e) => e.currentTarget.style.opacity = '0.6'}
+                                                title="Siparişi Sil"
+                                            >
+                                                <Trash2 size={14} />
+                                            </button>
                                         </div>
 
                                         <div style={{
@@ -167,8 +195,8 @@ export const OrdersPanel: React.FC<OrdersPanelProps> = ({
                                         gap: '8px'
                                     }}>
                                         {order.payment_method === 'Nakit'
-                                            ? <Banknote size={16}/>
-                                            : <CreditCard size={16}/>}
+                                            ? <Banknote size={16} />
+                                            : <CreditCard size={16} />}
 
                                         {order.payment_method.toUpperCase()}
                                     </div>
@@ -183,12 +211,12 @@ export const OrdersPanel: React.FC<OrdersPanelProps> = ({
                                 }}>
                                     {order.items.map((item, idx) => (
                                         <div key={idx}
-                                             style={{
-                                                 display: 'flex',
-                                                 justifyContent: 'space-between',
-                                                 marginBottom: '10px',
-                                                 fontSize: '0.95rem'
-                                             }}>
+                                            style={{
+                                                display: 'flex',
+                                                justifyContent: 'space-between',
+                                                marginBottom: '10px',
+                                                fontSize: '0.95rem'
+                                            }}>
                                             <span style={{ fontWeight: '500' }}>
                                                 <span style={{
                                                     color: 'var(--primary)',
@@ -233,6 +261,87 @@ export const OrdersPanel: React.FC<OrdersPanelProps> = ({
                                         </span>
                                     </div>
                                 </div>
+
+                                {timeInfo && (
+                                    <div style={{
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: '10px',
+                                        padding: '12px 16px',
+                                        background: isUrgent ? 'rgba(239, 68, 68, 0.1)' : 'rgba(255, 255, 255, 0.05)',
+                                        borderRadius: '12px',
+                                        marginBottom: '16px',
+                                        border: isUrgent ? '1px solid rgba(239, 68, 68, 0.2)' : '1px solid var(--glass-border)'
+                                    }}>
+                                        <AlertCircle size={16} color={timeInfo.color} />
+                                        <span style={{ fontSize: '0.85rem', fontWeight: '700', color: timeInfo.color }}>
+                                            {timeInfo.label}
+                                        </span>
+                                    </div>
+                                )}
+
+                                {order.notes && (
+                                    <div style={{
+                                        padding: '12px 16px',
+                                        background: 'rgba(255,255,255,0.02)',
+                                        borderRadius: '12px',
+                                        fontSize: '0.85rem',
+                                        color: 'var(--text-muted)',
+                                        marginBottom: '16px',
+                                        borderLeft: '3px solid var(--primary)',
+                                        fontStyle: 'italic'
+                                    }}>
+                                        "{order.notes}"
+                                    </div>
+                                )}
+
+                                {type === 'bekleyenler' && (
+                                    <div style={{ marginTop: 'auto' }}>
+                                        <label style={{
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            gap: '10px',
+                                            marginBottom: '20px',
+                                            cursor: 'pointer',
+                                            padding: '8px 4px'
+                                        }}>
+                                            <input
+                                                type="checkbox"
+                                                checked={!!order.is_tracked}
+                                                onChange={(e) => onUpdateOrderTracked?.(order.id, e.target.checked)}
+                                                style={{ width: '18px', height: '18px', accentColor: 'var(--success)' }}
+                                            />
+                                            <span style={{ fontSize: '0.9rem', fontWeight: '600', color: order.is_tracked ? 'var(--success)' : 'var(--text-muted)' }}>
+                                                Takipteyim
+                                            </span>
+                                        </label>
+
+                                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                                            <button
+                                                disabled={order.is_payment_received}
+                                                onClick={() => onUpdateOrderFlags?.(order.id, 'payment')}
+                                                className="btn"
+                                                style={{
+                                                    fontSize: '0.85rem',
+                                                    padding: '10px',
+                                                    background: order.is_payment_received ? 'rgba(16, 185, 129, 0.1)' : 'rgba(255,255,255,0.05)',
+                                                    color: order.is_payment_received ? 'var(--success)' : 'white',
+                                                    border: order.is_payment_received ? '1px solid rgba(16, 185, 129, 0.2)' : '1px solid rgba(255,255,255,0.1)',
+                                                    cursor: order.is_payment_received ? 'default' : 'pointer'
+                                                }}
+                                            >
+                                                {order.is_payment_received ? 'Ödendi' : 'Ödeme Al'}
+                                            </button>
+                                            <button
+                                                onClick={() => onUpdateOrderFlags?.(order.id, 'delivery')}
+                                                className="btn btn-primary"
+                                                style={{ fontSize: '0.85rem', padding: '10px' }}
+                                            >
+                                                Teslim Et
+                                            </button>
+                                        </div>
+                                    </div>
+                                )}
 
                             </div>
                         );

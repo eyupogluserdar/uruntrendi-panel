@@ -15,9 +15,10 @@ interface ProductFormProps {
     devicePowerWatt: number;
     filaments: Filament[];
     initialProduct?: Product;
+    isPage?: boolean;
 }
 
-export const ProductForm: React.FC<ProductFormProps> = ({ onClose, onSave, electricityRate, devicePowerWatt, filaments, initialProduct }) => {
+export const ProductForm: React.FC<ProductFormProps> = ({ onClose, onSave, electricityRate, devicePowerWatt, filaments, initialProduct, isPage }) => {
     const [formData, setFormData] = useState<Partial<Product>>(initialProduct || {
         title: '',
         weight_g: 0,
@@ -108,15 +109,29 @@ export const ProductForm: React.FC<ProductFormProps> = ({ onClose, onSave, elect
         onSave(finalProduct);
     };
 
+    const containerStyle: React.CSSProperties = isPage ? {
+        width: '100%',
+        padding: '0'
+    } : {
+        position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+        background: 'rgba(2, 6, 23, 0.85)', backdropFilter: 'blur(12px)',
+        display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1100,
+        padding: '20px'
+    };
+
     return (
-        <div style={{
-            position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
-            background: 'rgba(0,0,0,0.8)', backdropFilter: 'blur(8px)',
-            display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000,
-            padding: '20px'
-        }}>
-            <div className="glass-card" style={{ width: '100%', maxWidth: '600px', maxHeight: '90vh', overflowY: 'auto', padding: '32px' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
+        <div style={containerStyle}>
+            <div className={isPage ? "" : "glass-card fade-in"} style={{
+                width: '100%',
+                maxWidth: isPage ? 'none' : '900px',
+                maxHeight: isPage ? 'none' : '90vh',
+                overflowY: isPage ? 'visible' : 'auto',
+                padding: isPage ? '0' : '40px',
+                boxShadow: isPage ? 'none' : '0 25px 50px rgba(0,0,0,0.5)',
+                background: isPage ? 'transparent' : undefined,
+                border: isPage ? 'none' : undefined
+            }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '32px' }}>
                     <h2 style={{ fontSize: '1.5rem', fontWeight: 'bold' }}>{initialProduct ? 'Ürünü Düzenle' : 'Yeni Ürün Ekle'}</h2>
                     <button onClick={onClose} style={{ background: 'transparent', border: 'none', color: 'var(--text-muted)', cursor: 'pointer' }}>
                         <X size={24} />
@@ -129,7 +144,7 @@ export const ProductForm: React.FC<ProductFormProps> = ({ onClose, onSave, elect
                         onClick={() => formData.image_url && setShowZoom(true)}
                         style={{
                             width: '100%',
-                            height: '200px',
+                            height: '300px',
                             borderRadius: '12px',
                             background: 'rgba(0,0,0,0.3)',
                             display: 'flex',
@@ -142,7 +157,7 @@ export const ProductForm: React.FC<ProductFormProps> = ({ onClose, onSave, elect
                     >
                         {formData.image_url ? (
                             <>
-                                <img src={formData.image_url} alt="Önizleme" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                <img src={formData.image_url} alt="Önizleme" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
                                 <div style={{ position: 'absolute', bottom: '10px', right: '10px', display: 'flex', gap: '8px' }}>
                                     <button
                                         type="button"

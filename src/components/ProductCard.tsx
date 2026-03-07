@@ -63,7 +63,8 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, electricityRa
                     position: 'absolute',
                     inset: 0,
                     backgroundImage: `url(${product.image_url})`,
-                    backgroundSize: 'cover',
+                    backgroundSize: 'contain',
+                    backgroundRepeat: 'no-repeat',
                     backgroundPosition: 'center',
                     transition: 'transform 0.5s ease'
                 }} className="card-image-bg" />

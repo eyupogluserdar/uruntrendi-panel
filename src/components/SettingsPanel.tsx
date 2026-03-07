@@ -13,9 +13,10 @@ interface SettingsPanelProps {
     onFilamentsChange: (newFilaments: Filament[]) => void;
     onClose: () => void;
     profile: UserProfile | null;
+    isPage?: boolean;
 }
 
-export const SettingsPanel: React.FC<SettingsPanelProps> = ({ rate, onRateChange, powerWatt, onPowerWattChange, filaments, onFilamentsChange, onClose, profile }) => {
+export const SettingsPanel: React.FC<SettingsPanelProps> = ({ rate, onRateChange, powerWatt, onPowerWattChange, filaments, onFilamentsChange, onClose, profile, isPage }) => {
     const [activeTab, setActiveTab] = useState<'general' | 'users'>('general');
     const [tempRate, setTempRate] = useState(rate);
     const [tempPower, setTempPower] = useState(powerWatt);
@@ -140,22 +141,29 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({ rate, onRateChange
         transition: 'all 0.2s'
     };
 
+    const containerStyle: React.CSSProperties = isPage ? {
+        width: '100%',
+        padding: '0'
+    } : {
+        position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+        background: 'rgba(2, 6, 23, 0.85)', backdropFilter: 'blur(12px)',
+        display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1100,
+        padding: '20px'
+    };
+
     return (
-        <div style={{
-            position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
-            background: 'rgba(2, 6, 23, 0.85)', backdropFilter: 'blur(12px)',
-            display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1100,
-            padding: '20px'
-        }}>
-            <div className="glass-card fade-in" style={{
+        <div style={containerStyle}>
+            <div className={isPage ? "" : "glass-card fade-in"} style={{
                 width: '100%',
-                maxWidth: '600px',
-                maxHeight: '90vh',
-                overflowY: 'auto',
-                padding: '40px',
-                boxShadow: '0 25px 50px rgba(0,0,0,0.5)'
+                maxWidth: isPage ? 'none' : '600px',
+                maxHeight: isPage ? 'none' : '90vh',
+                overflowY: isPage ? 'visible' : 'auto',
+                padding: isPage ? '0' : '40px',
+                boxShadow: isPage ? 'none' : '0 25px 50px rgba(0,0,0,0.5)',
+                background: isPage ? 'transparent' : undefined,
+                border: isPage ? 'none' : undefined
             }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '32px' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                         <div style={{
                             width: '40px', height: '40px', borderRadius: '12px',
