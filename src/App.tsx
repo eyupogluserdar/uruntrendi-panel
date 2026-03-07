@@ -32,12 +32,12 @@ function App() {
   const [isPOSOpen, setIsPOSOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | undefined>(undefined);
 
-  const [user] = useState<User | null>({
-    id: 'admin-id',
+  const [user] = useState<User | null>(() => ({
+    id: 'admin-' + Math.random().toString(36).substr(2, 9),
     username: 'admin',
     full_name: 'Sistem Yöneticisi',
     role: 'admin'
-  });
+  }));
 
   const [devicePowerWatt, setDevicePowerWatt] = useState<number>(() => {
     const saved = localStorage.getItem('devicePowerWatt');
@@ -100,6 +100,69 @@ function App() {
     };
 
     fetchData();
+  }, []);
+
+  // Supabase Real-time Synchronization
+  useEffect(() => {
+    if (!supabase) return;
+
+    // Listen to changes in the 'products' table
+    const productSubscription = supabase.channel('public:products')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'products' }, (payload) => {
+        console.log('Product sync:', payload.eventType);
+        if (payload.eventType === 'INSERT') {
+          setProducts((prev) => {
+            if (prev.find(p => p.id === payload.new.id)) return prev;
+            return [payload.new as Product, ...prev];
+          });
+        } else if (payload.eventType === 'UPDATE') {
+          setProducts((prev) => prev.map((p) => p.id === payload.new.id ? payload.new as Product : p));
+        } else if (payload.eventType === 'DELETE') {
+          setProducts((prev) => prev.filter((p) => p.id !== payload.old.id));
+        }
+      })
+      .subscribe();
+
+    // Listen to changes in the 'filaments' table
+    const filamentSubscription = supabase.channel('public:filaments')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'filaments' }, (payload) => {
+        console.log('Filament sync:', payload.eventType);
+        if (payload.eventType === 'INSERT') {
+          setFilaments((prev) => {
+            if (prev.find(f => f.id === payload.new.id)) return prev;
+            return [payload.new as Filament, ...prev];
+          });
+        } else if (payload.eventType === 'UPDATE') {
+          setFilaments((prev) => prev.map((f) => f.id === payload.new.id ? (payload.new as Filament) : f));
+        } else if (payload.eventType === 'DELETE') {
+          setFilaments((prev) => prev.filter((f) => f.id !== payload.old.id));
+        }
+      })
+      .subscribe();
+
+    // Listen to changes in the 'orders' table
+    const orderSubscription = supabase.channel('public:orders')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'orders' }, (payload) => {
+        console.log('Order sync:', payload.eventType);
+        if (payload.eventType === 'INSERT') {
+          setOrders((prev) => {
+            if (prev.find(o => o.id === payload.new.id)) return prev;
+            return [payload.new as Order, ...prev];
+          });
+        } else if (payload.eventType === 'UPDATE') {
+          setOrders((prev) => prev.map((o) => o.id === payload.new.id ? (payload.new as Order) : o));
+        } else if (payload.eventType === 'DELETE') {
+          setOrders((prev) => prev.filter((o) => o.id !== payload.old.id));
+        }
+      })
+      .subscribe();
+
+    // Cleanup subscriptions on unmount
+    return () => {
+      supabase?.removeChannel(productSubscription);
+      supabase?.removeChannel(filamentSubscription);
+      supabase?.removeChannel(orderSubscription);
+    };
   }, []);
 
   // Yeni Ürün Ekle sekmesine geçişte editingProduct'ı temizle
