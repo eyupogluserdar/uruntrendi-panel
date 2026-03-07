@@ -100,19 +100,34 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({ rate, onRateChange
         onPowerWattChange(tempPower);
     };
 
-    const handleAddFilament = () => {
+    const handleAddFilament = async () => {
         if (newFilament.brand && newFilament.price_per_kg) {
             if (editingId) {
-                onFilamentsChange(filaments.map(f => f.id === editingId ? { ...f, ...newFilament } as Filament : f));
+                const updatedFilament = { ...newFilament, id: editingId } as Filament;
+                if (supabase) {
+                    const { error } = await supabase.from('filaments').update(updatedFilament).eq('id', editingId);
+                    if (error) {
+                        alert('Flament güncellenirken hata oluştu: ' + error.message);
+                        return;
+                    }
+                }
+                onFilamentsChange(filaments.map(f => f.id === editingId ? updatedFilament : f));
                 setEditingId(null);
             } else {
                 const filament: Filament = {
                     id: Math.random().toString(36).substring(2, 9),
-                    brand: newFilament.brand,
+                    brand: newFilament.brand || '',
                     type: newFilament.type || 'PLA',
                     price_per_kg: newFilament.price_per_kg,
                     stock_g: newFilament.stock_g || 0
                 };
+                if (supabase) {
+                    const { error } = await supabase.from('filaments').insert([filament]);
+                    if (error) {
+                        alert('Flament eklenirken hata oluştu: ' + error.message);
+                        return;
+                    }
+                }
                 onFilamentsChange([...filaments, filament]);
             }
             setNewFilament({ brand: '', type: 'PLA', price_per_kg: 0, stock_g: 0 });
@@ -124,9 +139,18 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({ rate, onRateChange
         setNewFilament({ brand: f.brand, type: f.type, price_per_kg: f.price_per_kg, stock_g: f.stock_g });
     };
 
-    const handleRemoveFilament = (id: string | undefined) => {
+    const handleRemoveFilament = async (id: string | undefined) => {
         if (!id) return;
-        onFilamentsChange(filaments.filter(f => f.id !== id));
+        if (confirm('Bu flamenti silmek istediğinize emin misiniz?')) {
+            if (supabase) {
+                const { error } = await supabase.from('filaments').delete().eq('id', id);
+                if (error) {
+                    alert('Flament silinirken hata oluştu: ' + error.message);
+                    return;
+                }
+            }
+            onFilamentsChange(filaments.filter(f => f.id !== id));
+        }
     };
 
     const inputStyle: React.CSSProperties = {

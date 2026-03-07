@@ -21,22 +21,12 @@ function App() {
     return saved ? parseFloat(saved) : 4.0;
   });
 
-  const [filaments, setFilaments] = useState<Filament[]>(() => {
-    const saved = localStorage.getItem('filaments');
-    return saved ? JSON.parse(saved) : [
-      { id: 'f1', brand: 'Microzey', type: 'PLA', price_per_kg: 450, color: 'Siyah', stock_g: 1000 },
-      { id: 'f2', brand: 'Bambu Lab', type: 'PETG', price_per_kg: 600, color: 'Beyaz', stock_g: 1000 }
-    ];
-  });
-
+  const [filaments, setFilaments] = useState<Filament[]>([]);
   const [activeTab, setActiveTab] = useState<Tab>('vitrin');
-
   const [products, setProducts] = useState<Product[]>([]);
   const [cart, setCart] = useState<OrderItem[]>([]);
-  const [orders, setOrders] = useState<Order[]>(() => {
-    const saved = localStorage.getItem('orders');
-    return saved ? JSON.parse(saved) : [];
-  });
+  const [orders, setOrders] = useState<Order[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
   const [isPOSOpen, setIsPOSOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | undefined>(undefined);
@@ -61,37 +51,42 @@ function App() {
     localStorage.setItem('devicePowerWatt', devicePowerWatt.toString());
   }, [devicePowerWatt]);
 
-  useEffect(() => {
-    localStorage.setItem('filaments', JSON.stringify(filaments));
-  }, [filaments]);
+  // Business data now synced to Supabase, removing localStorage effects
 
   useEffect(() => {
-    localStorage.setItem('orders', JSON.stringify(orders));
-  }, [orders]);
-
-  useEffect(() => {
-    const fetchProducts = async () => {
-      console.log('Attempting to fetch products from Supabase...');
+    const fetchData = async () => {
+      setIsLoading(true);
+      console.log('Attempting to fetch all data from Supabase...');
       if (!supabase) {
-        console.error('Supabase client is not initialized! Check your .env file and VITE_SUPABASE_URL / VITE_SUPABASE_ANON_KEY.');
+        console.error('Supabase client is not initialized!');
+        setIsLoading(false);
         return;
       }
 
-      const { data, error } = await supabase
-        .from('products')
-        .select('*')
-        .order('created_at', { ascending: false });
+      try {
+        const [prodRes, filRes, ordRes] = await Promise.all([
+          supabase.from('products').select('*').order('created_at', { ascending: false }),
+          supabase.from('filaments').select('*').order('created_at', { ascending: false }),
+          supabase.from('orders').select('*').order('created_at', { ascending: false })
+        ]);
 
-      if (error) {
-        console.error('Supabase error fetching products:', error);
-        alert('Ürünler yüklenirken Supabase hatası oluştu: ' + error.message);
-      } else {
-        console.log('Fetched products successfully:', data);
-        setProducts(data || []);
+        if (prodRes.error) throw prodRes.error;
+        if (filRes.error) throw filRes.error;
+        if (ordRes.error) throw ordRes.error;
+
+        setProducts(prodRes.data || []);
+        setFilaments(filRes.data || []);
+        setOrders(ordRes.data || []);
+        console.log('All data fetched successfully');
+      } catch (error: any) {
+        console.error('Supabase fetch error:', error);
+        alert('Veriler yüklenirken hata oluştu: ' + error.message);
+      } finally {
+        setIsLoading(false);
       }
     };
 
-    fetchProducts();
+    fetchData();
   }, []);
 
   // Yeni Ürün Ekle sekmesine geçişte editingProduct'ı temizle
@@ -120,7 +115,7 @@ function App() {
     });
   };
 
-  const handleProcessOrder = (paymentMethod: PaymentMethod, isPostDated: boolean, targetDate: string, notes: string) => {
+  const handleProcessOrder = async (paymentMethod: PaymentMethod, isPostDated: boolean, targetDate: string, notes: string) => {
     const newOrder: Order = {
       id: Math.random().toString(36).substr(2, 9),
       items: [...cart],
@@ -136,37 +131,69 @@ function App() {
       created_at: new Date().toISOString()
     };
 
-    cart.forEach(item => {
-      if (item.filament_id) {
-        setFilaments(prev => prev.map(f =>
-          f.id === item.filament_id ? { ...f, stock_g: Math.max(0, f.stock_g - (item.weight_g * item.quantity)) } : f
-        ));
+    if (supabase) {
+      const { error } = await supabase.from('orders').insert([newOrder]);
+      if (error) {
+        alert('Sipariş kaydedilirken hata oluştu: ' + error.message);
+        return;
       }
-    });
+
+      // Decrement filament stock in Supabase
+      for (const item of cart) {
+        if (item.filament_id) {
+          const filament = filaments.find(f => f.id === item.filament_id);
+          if (filament) {
+            const newStock = Math.max(0, filament.stock_g - (item.weight_g * item.quantity));
+            await supabase.from('filaments').update({ stock_g: newStock }).eq('id', filament.id);
+            setFilaments(prev => prev.map(f => f.id === filament.id ? { ...f, stock_g: newStock } : f));
+          }
+        }
+      }
+    }
 
     setOrders([newOrder, ...orders]);
     setCart([]);
     setIsPOSOpen(false);
   };
 
-  const handleUpdateOrderFlags = (id: string, field: 'payment' | 'delivery') => {
-    setOrders(prev => prev.map(o => {
-      if (o.id === id) {
-        if (field === 'payment') return { ...o, is_payment_received: true };
-        if (field === 'delivery') {
-          return { ...o, is_delivered: true, status: 'Teslim Edildi' as const };
-        }
+  const handleUpdateOrderFlags = async (id: string, field: 'payment' | 'delivery') => {
+    let update: Partial<Order> = {};
+    if (field === 'payment') update = { is_payment_received: true };
+    if (field === 'delivery') update = { is_delivered: true, status: 'Teslim Edildi' };
+
+    if (supabase) {
+      const { error } = await supabase.from('orders').update(update).eq('id', id);
+      if (error) {
+        alert('Sipariş güncellenirken hata oluştu: ' + error.message);
+        return;
       }
-      return o;
-    }));
+    }
+
+    setOrders(prev => prev.map(o => o.id === id ? { ...o, ...update } : o));
   };
 
-  const handleUpdateOrderTracked = (id: string, isTracked: boolean) => {
+  const handleUpdateOrderTracked = async (id: string, isTracked: boolean) => {
+    if (supabase) {
+      const { error } = await supabase.from('orders').update({ is_tracked: isTracked }).eq('id', id);
+      if (error) {
+        alert('Takip durumu güncellenirken hata oluştu: ' + error.message);
+        return;
+      }
+    }
     setOrders(prev => prev.map(o => o.id === id ? { ...o, is_tracked: isTracked } : o));
   };
 
-  const handleDeleteOrder = (id: string) => {
-    setOrders(orders.filter(o => o.id !== id));
+  const handleDeleteOrder = async (id: string) => {
+    if (confirm('Siparişi silmek istediğinize emin misiniz?')) {
+      if (supabase) {
+        const { error } = await supabase.from('orders').delete().eq('id', id);
+        if (error) {
+          alert('Sipariş silinirken hata oluştu: ' + error.message);
+          return;
+        }
+      }
+      setOrders(orders.filter(o => o.id !== id));
+    }
   };
 
   const handleTabChange = (tab: Tab) => {
@@ -178,6 +205,18 @@ function App() {
 
   if (!user) {
     return <Login onLogin={() => { }} />;
+  }
+
+  if (isLoading) {
+    return (
+      <div style={{
+        height: '100vh', width: '100vw', display: 'flex', flexDirection: 'column',
+        alignItems: 'center', justifyContent: 'center', background: 'var(--bg)', color: 'white'
+      }}>
+        <div className="spin" style={{ width: '40px', height: '40px', border: '4px solid var(--primary)', borderTopColor: 'transparent', borderRadius: '50%', marginBottom: '20px' }}></div>
+        <p style={{ fontWeight: '600', letterSpacing: '1px' }}>VERİLER YÜKLENİYOR...</p>
+      </div>
+    );
   }
 
   return (

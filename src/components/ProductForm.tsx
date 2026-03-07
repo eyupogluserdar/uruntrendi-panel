@@ -7,6 +7,7 @@ import {
     calculateFilamentCost,
     generateUniqueBarcode,
 } from '../utils/calculations';
+import { uploadImage } from '../lib/supabase';
 
 interface ProductFormProps {
     onClose: () => void;
@@ -36,6 +37,7 @@ export const ProductForm: React.FC<ProductFormProps> = ({ onClose, onSave, elect
     const [showZoom, setShowZoom] = useState(false);
     const [isBarcodesExpanded, setIsBarcodesExpanded] = useState(false);
     const [copiedIdx, setCopiedIdx] = useState<number | null>(null);
+    const [isUploading, setIsUploading] = useState(false);
     const [costs, setCosts] = useState({
         electricity: 0,
         filament: 0,
@@ -78,14 +80,19 @@ export const ProductForm: React.FC<ProductFormProps> = ({ onClose, onSave, elect
         }
     };
 
-    const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (file) {
-            const reader = new FileReader();
-            reader.onloadend = () => {
-                setFormData({ ...formData, image_url: reader.result as string });
-            };
-            reader.readAsDataURL(file);
+            setIsUploading(true);
+            try {
+                const publicUrl = await uploadImage(file);
+                setFormData({ ...formData, image_url: publicUrl });
+            } catch (error: any) {
+                console.error('Image upload error:', error);
+                alert('Resim yüklenirken hata oluştu: ' + error.message);
+            } finally {
+                setIsUploading(false);
+            }
         }
     };
 
@@ -206,9 +213,17 @@ export const ProductForm: React.FC<ProductFormProps> = ({ onClose, onSave, elect
                                     readOnly={formData.image_url?.startsWith('data:')}
                                     onChange={e => setFormData({ ...formData, image_url: e.target.value })}
                                 />
-                                <label className="btn" style={{ background: 'var(--surface)', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                    <Upload size={18} /> <span style={{ fontSize: '0.9rem' }}>PC'den Seç</span>
-                                    <input type="file" accept="image/*" style={{ display: 'none' }} onChange={handleImageUpload} />
+                                <label className="btn" style={{
+                                    background: 'var(--surface)',
+                                    cursor: isUploading ? 'not-allowed' : 'pointer',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '8px',
+                                    opacity: isUploading ? 0.6 : 1
+                                }}>
+                                    {isUploading ? <RefreshCw size={18} className="spin" /> : <Upload size={18} />}
+                                    <span style={{ fontSize: '0.9rem' }}>{isUploading ? 'Yükleniyor...' : "PC'den Seç"}</span>
+                                    <input type="file" accept="image/*" style={{ display: 'none' }} onChange={handleImageUpload} disabled={isUploading} />
                                 </label>
                             </div>
                         </div>
