@@ -15,6 +15,12 @@ self.addEventListener('install', (event) => {
 });
 
 self.addEventListener('fetch', (event) => {
+    // HTML veya JS dosyaları için her zaman ağa git, önbelleği kullanma (Deployment çakışmasını önler)
+    if (event.request.mode === 'navigate' || event.request.url.includes('.js')) {
+        event.respondWith(fetch(event.request));
+        return;
+    }
+
     event.respondWith(
         caches.match(event.request).then((response) => {
             return response || fetch(event.request);
