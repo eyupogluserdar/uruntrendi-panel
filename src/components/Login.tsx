@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
-import { supabase } from '../lib/supabase';
-import { User as UserIcon, LogIn, Lock, AlertCircle } from 'lucide-react';
+import { LogIn, Lock, AlertCircle } from 'lucide-react';
 import type { User as AppUser } from '../types';
 
 interface LoginProps {
@@ -8,84 +7,31 @@ interface LoginProps {
 }
 
 export const Login: React.FC<LoginProps> = ({ onLogin }) => {
-    const [username, setUsername] = useState('');
     const [password, setPassword] = useState('');
-    const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
-    const handleLogin = async (e: React.FormEvent) => {
-        e.preventDefault();
-        if (!supabase) {
-            setError('Supabase bağlantısı henüz kurulmadı.');
-            return;
-        }
+    // Hardcoded master password supplied by the user
+    const MASTER_PASSWORD = 'rntrnd2026';
 
-        setLoading(true);
+    const handleLogin = (e: React.FormEvent) => {
+        e.preventDefault();
         setError(null);
 
-        try {
-            // Check if user exists in the custom 'users' table
-            const { data: users, error: fetchError } = await supabase
-                .from('users')
-                .select('*')
-                .eq('username', username.trim().toLowerCase())
-                .eq('password', password);
+        if (password === MASTER_PASSWORD) {
+            // Save login state to localStorage so the user won't be prompted again 
+            // on the same device unless they explicitly log out.
+            localStorage.setItem('isAuthenticated', 'true');
 
-            if (fetchError) {
-                // Table might not exist yet or there's an RLS error
-                if (username.toLowerCase() === 'admin' && password === '1234') {
-                    // Try auto-creating only if it is the known initial admin
-                    const { data: newUser, error: createError } = await supabase
-                        .from('users')
-                        .insert([
-                            {
-                                username: 'admin',
-                                password: '1234',
-                                full_name: 'Sistem Yöneticisi',
-                                role: 'admin'
-                            }
-                        ])
-                        .select();
-
-                    if (!createError && newUser && newUser.length > 0) {
-                        onLogin(newUser[0] as AppUser);
-                        return;
-                    }
-                    setError(`Giriş Hatası: ${fetchError.message}. Lütfen SQL kodlarını Supabase Editor'de çalıştırdığınızdan emin olun.`);
-                } else {
-                    setError(`Hata: ${fetchError.message}`);
-                }
-            } else if (users && users.length > 0) {
-                // Map the user roles if missing from DB for some reason, but they should be there
-                const loggedInUser: AppUser = {
-                    id: users[0].id,
-                    username: users[0].username,
-                    full_name: users[0].full_name || users[0].username,
-                    role: users[0].role || 'admin',
-                    created_at: users[0].created_at
-                };
-                onLogin(loggedInUser);
-            } else {
-                // Explicitly check for initial admin/1234 if table is empty
-                if (username.toLowerCase() === 'admin' && password === '1234') {
-                    const { data: allUsers } = await supabase.from('users').select('id').limit(1);
-                    if (!allUsers || allUsers.length === 0) {
-                        const { data: newUser, error: createError } = await supabase
-                            .from('users')
-                            .insert([{ username: 'admin', password: '1234', full_name: 'Sistem Yöneticisi', role: 'admin' }])
-                            .select();
-                        if (!createError && newUser) {
-                            onLogin(newUser[0]);
-                            return;
-                        }
-                    }
-                }
-                setError('Kullanıcı adı veya şifre hatalı.');
-            }
-        } catch (err) {
-            setError('Bağlantı hatası oluştu.');
-        } finally {
-            setLoading(false);
+            // Generate a local mock admin user to satisfy the App's user state
+            const loggedInUser: AppUser = {
+                id: 'admin-' + Math.random().toString(36).substr(2, 9),
+                username: 'admin',
+                full_name: 'Sistem Yöneticisi',
+                role: 'admin'
+            };
+            onLogin(loggedInUser);
+        } else {
+            setError('Şifre hatalı. Lütfen tekrar deneyin.');
         }
     };
 
@@ -141,36 +87,7 @@ export const Login: React.FC<LoginProps> = ({ onLogin }) => {
                     <p style={{ color: 'var(--text-muted)', marginBottom: '32px', fontSize: '0.95rem' }}>Lütfen devam etmek için giriş yapın</p>
 
                     <form onSubmit={handleLogin} style={{ textAlign: 'left' }}>
-                        <div style={{ marginBottom: '20px', position: 'relative' }}>
-                            <div style={{
-                                position: 'absolute',
-                                left: '16px',
-                                top: '50%',
-                                transform: 'translateY(-50%)',
-                                color: 'var(--text-muted)'
-                            }}>
-                                <UserIcon size={18} />
-                            </div>
-                            <input
-                                type="text"
-                                placeholder="Kullanıcı Adı"
-                                value={username}
-                                onChange={(e) => setUsername(e.target.value)}
-                                required
-                                style={{
-                                    width: '100%',
-                                    padding: '14px 14px 14px 48px',
-                                    background: 'rgba(15, 23, 42, 0.6)',
-                                    border: '1px solid var(--glass-border)',
-                                    borderRadius: '14px',
-                                    color: 'white',
-                                    fontSize: '1rem',
-                                    outline: 'none',
-                                    transition: 'all 0.2s'
-                                }}
-                                className="login-input"
-                            />
-                        </div>
+                        {/* Removed Username Input */}
 
                         <div style={{ marginBottom: '24px', position: 'relative' }}>
                             <div style={{
@@ -223,7 +140,6 @@ export const Login: React.FC<LoginProps> = ({ onLogin }) => {
 
                         <button
                             type="submit"
-                            disabled={loading}
                             className="btn btn-primary"
                             style={{
                                 width: '100%',
@@ -238,7 +154,7 @@ export const Login: React.FC<LoginProps> = ({ onLogin }) => {
                                 boxShadow: '0 10px 25px rgba(99, 102, 241, 0.4)'
                             }}
                         >
-                            {loading ? 'Giriş Yapılıyor...' : 'Giriş Yap'}
+                            Giriş Yap
                         </button>
                     </form>
                 </div>

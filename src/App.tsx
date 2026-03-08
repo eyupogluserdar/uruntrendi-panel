@@ -32,12 +32,18 @@ function App() {
   const [isPOSOpen, setIsPOSOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | undefined>(undefined);
 
-  const [user] = useState<User | null>(() => ({
-    id: 'admin-' + Math.random().toString(36).substr(2, 9),
-    username: 'admin',
-    full_name: 'Sistem Yöneticisi',
-    role: 'admin'
-  }));
+  const [user, setUser] = useState<User | null>(() => {
+    const isAuth = localStorage.getItem('isAuthenticated');
+    if (isAuth === 'true') {
+      return {
+        id: 'admin-' + Math.random().toString(36).substr(2, 9),
+        username: 'admin',
+        full_name: 'Sistem Yöneticisi',
+        role: 'admin'
+      };
+    }
+    return null;
+  });
 
   const [devicePowerWatt, setDevicePowerWatt] = useState<number>(() => {
     const saved = localStorage.getItem('devicePowerWatt');
@@ -307,8 +313,13 @@ function App() {
   };
 
   if (!user) {
-    return <Login onLogin={() => { }} />;
+    return <Login onLogin={setUser} />;
   }
+
+  const handleLogout = () => {
+    localStorage.removeItem('isAuthenticated');
+    setUser(null);
+  };
 
   if (isLoading || fetchError) {
     const supabaseUrl = (import.meta.env.VITE_SUPABASE_URL || '').trim();
@@ -379,6 +390,29 @@ function App() {
                 <div style={{ fontSize: '0.7rem', color: 'var(--primary)', fontWeight: '700', textTransform: 'uppercase' }}>{user.role}</div>
               </div>
             </div>
+            <div style={{ width: '1px', height: '20px', background: 'rgba(255,255,255,0.1)' }}></div>
+            <button
+              onClick={handleLogout}
+              style={{
+                background: 'transparent',
+                border: 'none',
+                color: 'var(--danger)',
+                cursor: 'pointer',
+                padding: '6px',
+                borderRadius: '8px',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px',
+                fontWeight: '600',
+                fontSize: '0.8rem',
+                transition: 'background 0.2s',
+              }}
+              onMouseOver={(e) => e.currentTarget.style.background = 'rgba(239, 68, 68, 0.1)'}
+              onMouseOut={(e) => e.currentTarget.style.background = 'transparent'}
+              title="Sistemi Kilitle (Çıkış Yap)"
+            >
+              Kilitle
+            </button>
           </div>
         </header>
 
