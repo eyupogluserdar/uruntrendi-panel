@@ -260,16 +260,43 @@ function App() {
   };
 
   const handleDeleteOrder = async (id: string) => {
-    if (confirm('Siparişi silmek istediğinize emin misiniz?')) {
-      if (supabase) {
-        const { error } = await supabase.from('orders').delete().eq('id', id);
-        if (error) {
-          alert('Sipariş silinirken hata oluştu: ' + error.message);
-          return;
+    const orderToDelete = orders.find(o => o.id === id);
+
+    if (supabase) {
+      const { error } = await supabase.from('orders').delete().eq('id', id);
+      if (error) {
+        alert('Sipariş silinirken hata oluştu: ' + error.message);
+        return;
+      }
+
+      // Restore filament stock
+      if (orderToDelete) {
+        for (const item of orderToDelete.items) {
+          if (item.filament_id) {
+            const filament = filaments.find(f => f.id === item.filament_id);
+            if (filament) {
+              const newStock = filament.stock_g + (item.weight_g * item.quantity);
+              await supabase.from('filaments').update({ stock_g: newStock }).eq('id', filament.id);
+              setFilaments(prev => prev.map(f => f.id === filament.id ? { ...f, stock_g: newStock } : f));
+            }
+          }
         }
       }
-      setOrders(orders.filter(o => o.id !== id));
+    } else {
+      // Local fallback restore
+      if (orderToDelete) {
+        for (const item of orderToDelete.items) {
+          if (item.filament_id) {
+            const filament = filaments.find(f => f.id === item.filament_id);
+            if (filament) {
+              const newStock = filament.stock_g + (item.weight_g * item.quantity);
+              setFilaments(prev => prev.map(f => f.id === filament.id ? { ...f, stock_g: newStock } : f));
+            }
+          }
+        }
+      }
     }
+    setOrders(orders.filter(o => o.id !== id));
   };
 
   const handleTabChange = (tab: Tab) => {

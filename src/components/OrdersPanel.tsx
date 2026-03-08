@@ -143,7 +143,7 @@ export const OrdersPanel: React.FC<OrdersPanelProps> = ({
                                             Sipariş #{order.id}
                                             <button
                                                 onClick={() => {
-                                                    if (window.confirm('Bu siparişi silmek istediğinize emin misiniz?')) {
+                                                    if (window.confirm('Bu siparişi silmek istediğinize emin misiniz? (Kullanılan stoklar geri yüklenecektir)')) {
                                                         onDeleteOrder?.(order.id);
                                                     }
                                                 }}
@@ -316,13 +316,31 @@ export const OrdersPanel: React.FC<OrdersPanelProps> = ({
                                             </span>
                                         </label>
 
-                                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '8px' }}>
+                                            <button
+                                                onClick={() => {
+                                                    if (window.confirm('Bu siparişi iptal etmek istediğinize emin misiniz? Ödeme bilançodan düşecek ve kullanılan stoklar geri eklenecektir.')) {
+                                                        onDeleteOrder?.(order.id);
+                                                    }
+                                                }}
+                                                className="btn"
+                                                style={{
+                                                    fontSize: '0.80rem',
+                                                    padding: '10px',
+                                                    background: 'rgba(239, 68, 68, 0.1)',
+                                                    color: 'var(--danger)',
+                                                    border: '1px solid rgba(239, 68, 68, 0.2)',
+                                                    cursor: 'pointer'
+                                                }}
+                                            >
+                                                İptal Et
+                                            </button>
                                             <button
                                                 disabled={order.is_payment_received}
                                                 onClick={() => onUpdateOrderFlags?.(order.id, 'payment')}
                                                 className="btn"
                                                 style={{
-                                                    fontSize: '0.85rem',
+                                                    fontSize: '0.80rem',
                                                     padding: '10px',
                                                     background: order.is_payment_received ? 'rgba(16, 185, 129, 0.1)' : 'rgba(255,255,255,0.05)',
                                                     color: order.is_payment_received ? 'var(--success)' : 'white',
@@ -330,12 +348,12 @@ export const OrdersPanel: React.FC<OrdersPanelProps> = ({
                                                     cursor: order.is_payment_received ? 'default' : 'pointer'
                                                 }}
                                             >
-                                                {order.is_payment_received ? 'Ödendi' : 'Ödeme Al'}
+                                                {order.is_payment_received ? 'Ödendi' : 'Öd. Al'}
                                             </button>
                                             <button
                                                 onClick={() => onUpdateOrderFlags?.(order.id, 'delivery')}
                                                 className="btn btn-primary"
-                                                style={{ fontSize: '0.85rem', padding: '10px' }}
+                                                style={{ fontSize: '0.80rem', padding: '10px' }}
                                             >
                                                 Teslim Et
                                             </button>
