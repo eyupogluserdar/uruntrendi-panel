@@ -28,11 +28,11 @@ export const FinancePanel: React.FC<FinancePanelProps> = ({ orders, products }) 
         return d.toISOString().split('T')[0];
     };
 
-    // Filter delivered orders
-    const deliveredOrders = orders.filter(o => o.status === 'Teslim Edildi');
+    // Filter processed orders (delivered or paid)
+    const processedOrders = orders.filter(o => o.status === 'Teslim Edildi' || o.is_payment_received);
 
     // Get all unique months from orders
-    const availableMonths = Array.from(new Set(deliveredOrders.map(o => {
+    const availableMonths = Array.from(new Set(processedOrders.map(o => {
         const d = new Date(o.created_at);
         if (isNaN(d.getTime())) return currentMonthStr;
         return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
@@ -44,7 +44,7 @@ export const FinancePanel: React.FC<FinancePanelProps> = ({ orders, products }) 
 
     // Daily Metrics (Today)
     const todayStr = now.toISOString().split('T')[0];
-    const dailyOrders = deliveredOrders.filter(o => getSafeDateIso(o.created_at) === todayStr);
+    const dailyOrders = processedOrders.filter(o => getSafeDateIso(o.created_at) === todayStr);
 
     const dailyBalance = dailyOrders.reduce((sum, o) => sum + o.total_amount, 0);
     const dailyProfit = dailyOrders.reduce((sum, o) => {
@@ -56,8 +56,8 @@ export const FinancePanel: React.FC<FinancePanelProps> = ({ orders, products }) 
     }, 0);
 
     // General Metrics (All Time)
-    const totalBalance = deliveredOrders.reduce((sum, o) => sum + o.total_amount, 0);
-    const totalProfit = deliveredOrders.reduce((sum, o) => {
+    const totalBalance = processedOrders.reduce((sum, o) => sum + o.total_amount, 0);
+    const totalProfit = processedOrders.reduce((sum, o) => {
         const orderProfit = o.items.reduce((pSum, item) => {
             const cost = getProductCost(item.product_id);
             return pSum + (item.price - cost) * item.quantity;
@@ -70,7 +70,7 @@ export const FinancePanel: React.FC<FinancePanelProps> = ({ orders, products }) 
     const dailyCard = dailyOrders.filter(o => o.payment_method === 'Kart').reduce((sum, o) => sum + o.total_amount, 0);
 
     // Month Metrics (For the selected month)
-    const monthOrders = deliveredOrders.filter(o => {
+    const monthOrders = processedOrders.filter(o => {
         const d = new Date(o.created_at);
         if (isNaN(d.getTime())) return false;
         const mStr = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
@@ -98,7 +98,7 @@ export const FinancePanel: React.FC<FinancePanelProps> = ({ orders, products }) 
     const sortedDates = Object.keys(ordersByDate).sort((a, b) => b.localeCompare(a));
 
     // Detail Modal Content
-    const detailOrders = selectedDetailDate ? (deliveredOrders.filter(o => getSafeDateIso(o.created_at) === selectedDetailDate)) : [];
+    const detailOrders = selectedDetailDate ? (processedOrders.filter(o => getSafeDateIso(o.created_at) === selectedDetailDate)) : [];
     const detailTotal = detailOrders.reduce((sum, o) => sum + o.total_amount, 0);
 
     const soldProducts = detailOrders.reduce((acc, order) => {
