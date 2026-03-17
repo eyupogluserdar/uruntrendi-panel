@@ -425,6 +425,21 @@ function App() {
               setEditingProduct(product);
               setActiveTab('yeni-urun');
             }}
+            onDeleteProduct={async (productId: string) => {
+              if (!supabase) return;
+              if (confirm('Bu ürünü silmek istediğinize emin misiniz?')) {
+                const { error } = await supabase
+                  .from('products')
+                  .delete()
+                  .eq('id', productId);
+
+                if (error) {
+                  alert('Ürün silinirken hata oluştu: ' + error.message);
+                } else {
+                  setProducts(products.filter(p => p.id !== productId));
+                }
+              }
+            }}
           />
         )}
         {activeTab === 'stok-takibi' && (

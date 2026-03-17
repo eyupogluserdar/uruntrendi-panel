@@ -9,8 +9,8 @@
  * @param rate kWh Birim Fiyatı (TL)
  * @param powerWatt Cihaz Güç Tüketimi (Watt)
  */
-export const calculateElectricityCost = (hours: number, minutes: number, rate: number, powerWatt: number = 100): number => {
-    const totalHours = hours + (minutes / 60);
+export const calculateElectricityCost = (hours: number, minutes: number, seconds: number = 0, rate: number, powerWatt: number = 100): number => {
+    const totalHours = hours + (minutes / 60) + (seconds / 3600);
     const powerKW = powerWatt / 1000;
     return totalHours * powerKW * rate;
 };

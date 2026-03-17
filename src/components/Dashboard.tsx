@@ -8,9 +8,10 @@ interface DashboardProps {
     products: Product[];
     onAddToCart: (product: Product) => void;
     onEditProduct: (product: Product) => void;
+    onDeleteProduct: (productId: string) => void;
 }
 
-export const Dashboard: React.FC<DashboardProps> = ({ filaments, products, onAddToCart, onEditProduct }) => {
+export const Dashboard: React.FC<DashboardProps> = ({ filaments, products, onAddToCart, onEditProduct, onDeleteProduct }) => {
     return (
         <div className="container" style={{ paddingBottom: '120px' }}>
             {/* Arama ve Filtre - Daha geniş ve premium */}
@@ -54,6 +55,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ filaments, products, onAdd
                             filaments={filaments}
                             onClick={() => onEditProduct(product)}
                             onAddToCart={() => onAddToCart(product)}
+                            onDelete={() => onDeleteProduct(product.id)}
                         />
                     </div>
                 ))}

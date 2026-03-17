@@ -25,6 +25,7 @@ export const ProductForm: React.FC<ProductFormProps> = ({ onClose, onSave, elect
         weight_g: 0,
         print_time_h: 0,
         print_time_m: 0,
+        print_time_s: 0,
         filament_id: filaments.length > 0 ? filaments[0].id : '',
         filament_price_per_kg: filaments.length > 0 ? filaments[0].price_per_kg : 600,
         sale_price: 0,
@@ -49,7 +50,7 @@ export const ProductForm: React.FC<ProductFormProps> = ({ onClose, onSave, elect
         const selectedFilament = filaments.find(f => f.id === formData.filament_id);
         const currentPrice = selectedFilament ? selectedFilament.price_per_kg : (formData.filament_price_per_kg || 600);
 
-        const electricity = calculateElectricityCost(formData.print_time_h || 0, formData.print_time_m || 0, electricityRate, devicePowerWatt);
+        const electricity = calculateElectricityCost(formData.print_time_h || 0, formData.print_time_m || 0, formData.print_time_s || 0, electricityRate, devicePowerWatt);
         const filament = calculateFilamentCost(formData.weight_g || 0, currentPrice);
 
         setCosts({
@@ -57,7 +58,7 @@ export const ProductForm: React.FC<ProductFormProps> = ({ onClose, onSave, elect
             filament,
             total: electricity + filament
         });
-    }, [formData.print_time_h, formData.print_time_m, formData.weight_g, formData.filament_id, electricityRate, devicePowerWatt, filaments]);
+    }, [formData.print_time_h, formData.print_time_m, formData.print_time_s, formData.weight_g, formData.filament_id, electricityRate, devicePowerWatt, filaments]);
 
     const handleBarcodeRefresh = () => {
         const newBarcodes = Array.from({ length: formData.stock_count || 1 }, () => generateUniqueBarcode());
@@ -233,7 +234,7 @@ export const ProductForm: React.FC<ProductFormProps> = ({ onClose, onSave, elect
                             <input type="number" required style={inputStyle} value={formData.weight_g} onChange={e => setFormData({ ...formData, weight_g: parseFloat(e.target.value) })} />
                         </div>
 
-                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '12px' }}>
                             <div>
                                 <label style={labelStyle}>Üretim Süresi (Saat)</label>
                                 <input type="number" min="0" required style={inputStyle} value={formData.print_time_h} onChange={e => setFormData({ ...formData, print_time_h: parseInt(e.target.value) || 0 })} />
@@ -241,6 +242,10 @@ export const ProductForm: React.FC<ProductFormProps> = ({ onClose, onSave, elect
                             <div>
                                 <label style={labelStyle}>Dakika</label>
                                 <input type="number" min="0" max="59" required style={inputStyle} value={formData.print_time_m} onChange={e => setFormData({ ...formData, print_time_m: parseInt(e.target.value) || 0 })} />
+                            </div>
+                            <div>
+                                <label style={labelStyle}>Saniye</label>
+                                <input type="number" min="0" max="59" required style={inputStyle} value={formData.print_time_s} onChange={e => setFormData({ ...formData, print_time_s: parseInt(e.target.value) || 0 })} />
                             </div>
                         </div>
 

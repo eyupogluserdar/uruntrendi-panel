@@ -14,6 +14,7 @@ export interface Product {
   weight_g: number;
   print_time_h: number;
   print_time_m: number;
+  print_time_s: number;
   filament_id?: string; // Reference to selected filament
   filament_price_per_kg: number; // Snapshot of price at creation or for fallbacks
   electricity_cost: number;

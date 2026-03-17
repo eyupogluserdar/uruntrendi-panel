@@ -1,4 +1,4 @@
-import { Box, BarChart3, AlertTriangle, Tag, ShoppingCart, Clock } from 'lucide-react';
+import { Box, BarChart3, AlertTriangle, Tag, ShoppingCart, Clock, Trash2 } from 'lucide-react';
 import type { Product, Filament } from '../types';
 import { formatCurrency } from '../utils/calculations';
 
@@ -7,9 +7,10 @@ interface ProductCardProps {
     filaments: Filament[];
     onClick: (product: Product) => void;
     onAddToCart: () => void;
+    onDelete?: () => void;
 }
 
-export const ProductCard: React.FC<ProductCardProps> = ({ product, filaments, onClick, onAddToCart }) => {
+export const ProductCard: React.FC<ProductCardProps> = ({ product, filaments, onClick, onAddToCart, onDelete }) => {
     const isLowStock = product.stock_count <= product.min_stock_alert;
 
     const selectedFilament = filaments.find(f => f.id === product.filament_id);
@@ -45,6 +46,46 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, filaments, on
                 }}>
                     <AlertTriangle size={14} /> Düşük Stok
                 </div>
+            )}
+
+            {onDelete && (
+                <button
+                    onClick={(e) => {
+                        e.stopPropagation();
+                        if (confirm('Bu ürünü silmek istediğinize emin misiniz?')) {
+                            onDelete();
+                        }
+                    }}
+                    style={{
+                        position: 'absolute',
+                        top: '16px',
+                        right: '16px',
+                        background: 'rgba(239, 68, 68, 0.2)',
+                        backdropFilter: 'blur(8px)',
+                        color: '#ef4444',
+                        width: '40px',
+                        height: '40px',
+                        borderRadius: '12px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        zIndex: 20,
+                        border: '1px solid rgba(239, 68, 68, 0.3)',
+                        cursor: 'pointer',
+                        transition: 'all 0.2s ease',
+                    }}
+                    onMouseEnter={(e) => {
+                        e.currentTarget.style.background = 'rgba(239, 68, 68, 0.9)';
+                        e.currentTarget.style.color = 'white';
+                    }}
+                    onMouseLeave={(e) => {
+                        e.currentTarget.style.background = 'rgba(239, 68, 68, 0.2)';
+                        e.currentTarget.style.color = '#ef4444';
+                    }}
+                    title="Ürünü Sil"
+                >
+                    <Trash2 size={20} />
+                </button>
             )}
 
             <div style={{
@@ -116,7 +157,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, filaments, on
                         <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Üretim Süresi</span>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontWeight: '600' }}>
                             <Clock size={16} color="var(--primary)" />
-                            <span>{product.print_time_h}s {product.print_time_m}d</span>
+                            <span>{product.print_time_h}s {product.print_time_m}d {product.print_time_s || 0}sn</span>
                         </div>
                     </div>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
